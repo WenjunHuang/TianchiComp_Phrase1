@@ -24,6 +24,7 @@ object Settings {
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
+    "com.alibaba" % "fastjson" % "1.2.47",
 
     // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
