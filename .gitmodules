@@ -1,0 +1,4 @@
+[submodule "submodules/API_Commons"]
+	path = submodules/API_Commons
+	url = http://192.168.2.247/platform/API_Commons.git
+	branch = master
