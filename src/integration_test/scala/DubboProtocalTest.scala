@@ -23,16 +23,25 @@ object DubboProtocalTest extends App {
   implicit val logger = system.log
   implicit val ec = system.dispatcher
   implicit val timeout = Timeout(5 seconds)
-  val host = "192.168.2.248"
+  val host = "192.168.2.221"
   val port1 = 20890
   val port2 = 20891
   val port3 = 20892
 
 
   val dubboActors = Seq(
-    system.actorOf(Props(classOf[DubboActor],host, port1, 200,logger)),//.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor],host, port2, 200,logger)),//.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor],host, port3, 200,logger))//.withMailbox("prio-dispatcher"))
+    system.actorOf(Props(classOf[DubboActor], host, port1, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port1, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port1, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port1, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port2, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port2, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port2, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port2, 50, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host, port3, 50, logger)), //.withMailbox("prio-dispatcher"))
+    system.actorOf(Props(classOf[DubboActor], host, port3, 50, logger)), //.withMailbox("prio-dispatcher"))
+    system.actorOf(Props(classOf[DubboActor], host, port3, 50, logger)), //.withMailbox("prio-dispatcher"))
+    system.actorOf(Props(classOf[DubboActor], host, port3, 50, logger))
   )
 
 
@@ -44,7 +53,7 @@ object DubboProtocalTest extends App {
         "hash",
         "Ljava/lang/String;",
         value)
-      val index = ThreadLocalRandom.current().nextInt(3)
+      val index = ThreadLocalRandom.current().nextInt(dubboActors.size)
       val fut = (dubboActors(index) ? request).mapTo[BenchmarkResponse]
       onComplete(fut) {
         case Success(msg) =>
@@ -55,7 +64,7 @@ object DubboProtocalTest extends App {
             complete(StatusCodes.InternalServerError)
           }
         case Failure(cause) =>
-//          logger.error(cause,s"server error")
+          //          logger.error(cause,s"server error")
           complete(StatusCodes.InternalServerError)
       }
     }
