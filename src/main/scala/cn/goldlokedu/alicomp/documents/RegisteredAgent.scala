@@ -1,5 +1,6 @@
 package cn.goldlokedu.alicomp.documents
 
+import akka.actor.ActorPath
 import cn.goldlokedu.alicomp.documents.CapacityType.CapacityType
 import cn.goldlokedu.alicomp.util.json.EnumJsonConverter
 import spray.json.RootJsonFormat
@@ -20,7 +21,7 @@ object CapacityType extends Enumeration {
   * @param agentName 代理名字， 必须唯一
   * @param address 代理的akka ref 地址
   */
-case class RegisteredAgent(cap: CapacityType, agentName: String, address: String)
+case class RegisteredAgent(cap: CapacityType, agentName: String, address: ActorPath)
 object RegisteredAgent {
   implicit val RegisteredAgentFormat: RootJsonFormat[RegisteredAgent] = jsonFormat3(RegisteredAgent.apply)
 }
