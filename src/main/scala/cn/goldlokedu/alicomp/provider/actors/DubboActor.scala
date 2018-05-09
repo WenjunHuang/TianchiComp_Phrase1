@@ -46,14 +46,19 @@ class DubboActor(dubboHost: String,
       logger.error(s"can not connect to dubbo at $dubboHost:$dubboPort")
       context stop self
     case Connected(remote, local) =>
-      logger.info(s"dubbo connected")
+      logger.info(
+        s"""
+           |dubbo connected
+           |host: ${remote.getHostString}, port: ${remote.getPort}
+           |my_host: ${local.getHostString},my_port: ${local.getPort}""".stripMargin)
       connection = Some(sender())
       connection.get ! Register(self)
-
       unstashAll()
+
       // debug
       implicit val ec = context.dispatcher
       context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+
       context become ready
     case _ =>
       stash()
@@ -93,11 +98,11 @@ class DubboActor(dubboHost: String,
       context become connectingToDubbo
   }
 
-  private def connectToDubbo() = {
+  private def connectToDubbo(): Unit = {
     IO(Tcp) ! Connect(new InetSocketAddress(dubboHost, dubboPort))
   }
 
-  private def trySendNextPending() = {
+  private def trySendNextPending(): Unit = {
     (isBelowThrehold, hasAnyPending, notWriting) match {
       case (true, true, true) =>
         pendingRequests.dequeueFirst(_ => true) match {
@@ -109,7 +114,7 @@ class DubboActor(dubboHost: String,
     }
   }
 
-  private def trySendRequestToDubbo(replyTo: ActorRef, request: BenchmarkRequest) = {
+  private def trySendRequestToDubbo(replyTo: ActorRef, request: BenchmarkRequest): Unit = {
     (isBelowThrehold, noPending, notWriting) match {
       case (true, true, true) =>
         sendRequestToDubbo(replyTo, request)

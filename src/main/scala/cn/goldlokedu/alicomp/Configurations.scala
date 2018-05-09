@@ -11,14 +11,6 @@ trait SystemConfiguration {
   this: Configuration ⇒
   private def systemConfig = config.getConfig("system")
 
-  def actorSystemHost = systemConfig.getString("actor-system-host")
-
-  def actorSystemPort = systemConfig.getInt("actor-system-port")
-
-  def consumerHttpHost = systemConfig.getString("consumer-http-host")
-
-  def consumerHttpPort = systemConfig.getInt("consumer-http-port")
-
   def dubboProviderHost = systemConfig.getString("dubbo-provider-host")
 
   def dubboProviderPort = systemConfig.getInt("dubbo-provider-port")
@@ -26,4 +18,24 @@ trait SystemConfiguration {
   def etcdHost = systemConfig.getString("etcd-host")
 
   def etcdPort = systemConfig.getInt("etcd-port")
+
+  def runType = systemConfig.getString("type")
+}
+
+trait ConsumerConfiguration {
+  this: Configuration =>
+  private def consumerConfig = config.getConfig("consumer")
+
+  def consumerHttpHost = consumerConfig.getString("http-host")
+
+  def consumerHttpPort = consumerConfig.getInt("http-port")
+}
+
+trait ProviderConfiguration {
+  this: Configuration =>
+  private def providerConfig = config.getConfig("provider")
+
+  def dubboProviderConnectionCount = providerConfig.getInt("dubbo-provider-connection-count")
+
+  def dubboProviderMaxConcurrentCountPerConnection = providerConfig.getInt("dubbo-provider-max-concurrent-count-per-connection")
 }
