@@ -8,7 +8,7 @@ my-ivy: http://192.168.2.247:8078, [organization]/[module]/(scala_[scalaVersion]
 ' > /root/.sbt/repositories
 
 RUN mkdir -p /root/workspace/agent
-COPY Docker/build /root/workspace/agent
+COPY . /root/workspace/agent
 WORKDIR /root/workspace/agent
 RUN set -ex && sbt assembly
 
