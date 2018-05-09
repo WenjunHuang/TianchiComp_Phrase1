@@ -1,7 +1,6 @@
 package cn.goldlokedu.alicomp.documents
 
 import java.nio.ByteOrder
-import java.util.UUID
 
 import akka.util.{ByteString, ByteStringBuilder}
 
