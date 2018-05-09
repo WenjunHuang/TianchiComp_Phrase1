@@ -1,19 +1,64 @@
 package cn.goldlokedu.alicomp.consumer
 
-import akka.actor.{Actor, ActorLogging}
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
+import akka.actor.Status.Failure
+import akka.actor._
+import akka.util.Timeout
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, RegisteredAgent}
+import cn.goldlokedu.alicomp.etcd.EtcdClient
 
-class ConsumerAgentActor(providers: Array[ProviderAgentActor]) extends Actor with ActorLogging {
-  private val size = providers.length - 1
-  private var cursor = 0
+import scala.concurrent.Future
+
+class ConsumerAgentActor(client: EtcdClient)(implicit timeout: Timeout) extends Actor with ActorLogging {
+  import ConsumerAgentActor._
+  import akka.pattern.pipe
+  import context.dispatcher
+
+  private var signal: Cancellable = _
+  private var providers: Seq[RegisteredAgent] = Seq.empty
+  private var provider: Option[ActorRef] = None
+
+  override def preStart(): Unit = {
+    schedule()
+    super.preStart()
+  }
 
   override def receive: Receive = {
+    case Tick =>
+      client.providers() pipeTo self
+
+    case p: Seq[RegisteredAgent @unchecked] =>
+      providers = providers ++ p
+      Future
+        .traverse(providers
+          .map{agent =>
+            context.actorSelection(agent.address).resolveOne()})(identity) pipeTo self
+
+    case Failure(f) =>
+      log.debug(f.getMessage)
+      schedule()
+
+    case providers: Seq[ActorRef @unchecked] =>
+      provider  = providers.headOption
+
+    case Terminated(remoteActorRef) =>
+      log.debug("{} on remote on work", remoteActorRef.path)
+
     case request: BenchmarkRequest =>
-      getProvider(cursor).ref.forward(BenchmarkResponse(request.requestId, 20, Some(20)))
-      if (cursor == size) cursor = 0 else cursor = cursor + 1
+      provider.foreach(_.tell(request, sender))
+
+    case response: BenchmarkResponse =>
+      sender() ! response
   }
 
-  private def getProvider(cursor: Int) = {
-    providers(cursor)
+  protected def schedule() {
+    cancel()
+    signal = context.system.scheduler.scheduleOnce(timeout.duration, self, Tick)
   }
+
+  protected def cancel(): Unit = if (signal != null) signal.cancel()
+
+}
+
+object ConsumerAgentActor {
+  case object Tick
 }
