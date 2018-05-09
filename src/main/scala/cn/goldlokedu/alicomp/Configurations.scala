@@ -11,10 +11,6 @@ trait SystemConfiguration {
   this: Configuration ⇒
   private def systemConfig = config.getConfig("system")
 
-  def dubboProviderHost = systemConfig.getString("dubbo-provider-host")
-
-  def dubboProviderPort = systemConfig.getInt("dubbo-provider-port")
-
   def etcdHost = systemConfig.getString("etcd-host")
 
   def etcdPort = systemConfig.getInt("etcd-port")

@@ -17,13 +17,33 @@ trait AliComp extends Actors
   override def config = ConfigFactory.load()
 
 
-  def runAsProviderSmallAgent()
+  def runAsProviderSmallAgent(): Unit = {
+    startProvider(CapacityType.S)
+  }
 
-  def runAsProviderMediumAgent()
+  def runAsProviderMediumAgent(): Unit = {
+    startProvider(CapacityType.M)
+  }
 
-  def runAsProviderLargeAgent()
+  def runAsProviderLargeAgent(): Unit = {
+    startProvider(CapacityType.L)
+  }
 
-  def runAsConsumerAgent()
+  def runAsConsumerAgent(): Unit = {
+    val consumerAgent = system.actorOf(Props(new ConsumerAgentActor))
+    val router = new ConsumerAgentRouter(consumerAgent)
+
+    Http().bindAndHandle(router.routers, consumerHttpHost, consumerHttpPort)
+  }
+
+  def startProvider(cap: CapacityType.Value): Unit = {
+    system.actorOf(Props(new ProviderAgentActor(
+      CapacityType.S,
+      dubboProviderConnectionCount,
+      dubboProviderMaxConcurrentCountPerConnection,
+      dubboProviderHost,
+      dubboProviderPort)))
+  }
 
   runType match {
     case "provider-small" => runAsProviderSmallAgent()
@@ -36,32 +56,5 @@ trait AliComp extends Actors
 }
 
 object Boot extends App with AliComp {
-  override def runAsProviderSmallAgent(): Unit = {
-    startProvider(CapacityType.S)
-  }
-
-  override def runAsProviderMediumAgent(): Unit = {
-    startProvider(CapacityType.M)
-  }
-
-  override def runAsProviderLargeAgent(): Unit = {
-    startProvider(CapacityType.L)
-  }
-
-  override def runAsConsumerAgent(): Unit = {
-    val consumerAgent = system.actorOf(Props(new ConsumerAgentActor))
-    val router = new ConsumerAgentRouter(consumerAgent)
-
-    Http().bindAndHandle(router.routers, consumerHttpHost, consumerHttpPort)
-  }
-
-  private def startProvider(cap: CapacityType.Value): Unit = {
-    system.actorOf(Props(new ProviderAgentActor(
-      CapacityType.S,
-      dubboProviderConnectionCount,
-      dubboProviderMaxConcurrentCountPerConnection,
-      dubboProviderHost,
-      dubboProviderPort)))
-  }
 }
 
