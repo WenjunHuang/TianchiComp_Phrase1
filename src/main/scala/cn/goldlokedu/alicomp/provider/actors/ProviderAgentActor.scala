@@ -1,70 +1,63 @@
 package cn.goldlokedu.alicomp.provider.actors
 
-import akka.actor.{Actor, Props, Status}
-import akka.event.LoggingAdapter
-import akka.pattern._
-import akka.routing._
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType, RegisteredAgent}
-import cn.goldlokedu.alicomp.etcd.EtcdClient
-import cn.goldlokedu.alicomp.util.GetActorRemoteAddressExtension
+import akka.actor.Status.Failure
+import akka.actor._
+import cn.goldlokedu.alicomp.documents.CapacityType.CapacityType
+import cn.goldlokedu.alicomp.documents._
+import cn.goldlokedu.alicomp.etcd.EctdClient
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
-class ProviderAgentActor(capType: CapacityType.Value,
-                         dubboActorCount: Int,
-                         threhold: Int,
-                         dubboHost: String,
-                         dubboPort: Int)(implicit etcdClient: EtcdClient,
-                                         logger: LoggingAdapter) extends Actor {
+class ProviderAgentActor(client: EctdClient,
+                         capacityType: CapacityType,
+                         duration: FiniteDuration) extends Actor with ActorLogging {
 
-  implicit val ec: ExecutionContext = context.system.dispatcher
-
+  import akka.pattern.pipe
+  import context.dispatcher
   import ProviderAgentActor._
 
-  var router = {
-    val routees = Vector.fill(dubboActorCount) {
-      val r = context.actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)))
-      context watch r
-      ActorRefRoutee(r)
-    }
-    Router(RoundRobinRoutingLogic(), routees)
-  }
+  private var signal: Cancellable = _
+  private var consumer: Option[ActorSelection] = None
 
   override def preStart(): Unit = {
-    self ! Init
+    val name = self.path.name
+    val path = self.path
+
+    val registeredAgent =
+      RegisteredAgent(capacityType, name, path)
+
+    client.addConsumer(registeredAgent)
   }
 
-  override def receive: Receive = init
+  override def receive: Receive = {
+    case Tick =>
+      client.consumers() pipeTo self
+      cancel()
 
-  private def init: Receive = {
-    case Init =>
-      initialize()
-    case PublishedToEtcd =>
-      logger.info("address published to etcd")
-      context become ready
-    case Status.Failure(cause) =>
-      logger.error(s"can not publish tot etcd", cause)
-      context stop self
+    case Failure(f) =>
+      log.debug("retry for remote provider agent, exception: {}", f)
+      schedule()
+
+    case consumerPath: Option[RegisteredAgent @unchecked] =>
+      consumer =
+        consumerPath.map (c => context.actorSelection(c.address))
+
+    case request: BenchmarkRequest =>
+      sender ! request
+
+    case response: BenchmarkResponse =>
+      consumer.foreach(_ ! response)
   }
 
-  private def ready: Receive = {
-    case r: BenchmarkRequest =>
-      router.route(r, sender())
+  protected def schedule() {
+    cancel()
+    signal = context.system.scheduler.scheduleOnce(duration, self, Tick)
   }
 
-  def initialize() = {
-    //debug
-    val address = GetActorRemoteAddressExtension(context.system).remotePath(self.path)
-    logger.info(address.toString)
-    etcdClient.addProvider(RegisteredAgent(capType, address.toString, address.toString))
-      .map(_ => PublishedToEtcd) pipeTo self
-  }
+  protected def cancel(): Unit = if (signal != null) signal.cancel()
+
 }
 
 object ProviderAgentActor {
-
-  case object Init
-
-  case object PublishedToEtcd
-
+  case object Tick
 }
