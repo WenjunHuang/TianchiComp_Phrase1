@@ -1,23 +1,16 @@
 package cn.goldlokedu.alicomp.provider.actors
 
-import akka.actor.Status.Failure
 import akka.actor._
+import akka.event.LoggingAdapter
+import akka.routing.SmallestMailboxPool
 import cn.goldlokedu.alicomp.documents.CapacityType.CapacityType
 import cn.goldlokedu.alicomp.documents._
-import cn.goldlokedu.alicomp.etcd.EctdClient
+import cn.goldlokedu.alicomp.etcd.EtcdClient
 
-import scala.concurrent.duration.FiniteDuration
-
-class ProviderAgentActor(client: EctdClient,
-                         capacityType: CapacityType,
-                         duration: FiniteDuration) extends Actor with ActorLogging {
-
-  import akka.pattern.pipe
-  import context.dispatcher
-  import ProviderAgentActor._
-
-  private var signal: Cancellable = _
-  private var consumer: Option[ActorSelection] = None
+class ProviderAgentActor(dubboHost: String,
+                         dubboPort: Int,
+                         threhold: Int,
+                         capacityType: CapacityType)(implicit client: EtcdClient, logger: LoggingAdapter) extends Actor with ActorLogging {
 
   override def preStart(): Unit = {
     val name = self.path.name
@@ -25,39 +18,22 @@ class ProviderAgentActor(client: EctdClient,
 
     val registeredAgent =
       RegisteredAgent(capacityType, name, path)
-
-    client.addConsumer(registeredAgent)
+    client.addProvider(registeredAgent)
   }
+
+  val dubbo: ActorRef =
+    context.actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold))
+                    .withRouter(
+                      new SmallestMailboxPool(8)
+                        .withSupervisorStrategy(SupervisorStrategy.defaultStrategy)))
 
   override def receive: Receive = {
-    case Tick =>
-      client.consumers() pipeTo self
-      cancel()
-
-    case Failure(f) =>
-      log.debug("retry for remote provider agent, exception: {}", f)
-      schedule()
-
-    case consumerPath: Option[RegisteredAgent @unchecked] =>
-      consumer =
-        consumerPath.map (c => context.actorSelection(c.address))
 
     case request: BenchmarkRequest =>
-      sender ! request
+      dubbo.forward(request)
 
     case response: BenchmarkResponse =>
-      consumer.foreach(_ ! response)
+      sender ! response
   }
 
-  protected def schedule() {
-    cancel()
-    signal = context.system.scheduler.scheduleOnce(duration, self, Tick)
-  }
-
-  protected def cancel(): Unit = if (signal != null) signal.cancel()
-
-}
-
-object ProviderAgentActor {
-  case object Tick
 }
