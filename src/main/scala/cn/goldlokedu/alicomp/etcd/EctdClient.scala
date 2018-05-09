@@ -36,4 +36,10 @@ class EctdClient(host: String, port: Int)(implicit dispatcher: ExecutionContext)
       }
     }
   }
+
+  def deleteProviders(): Future[Boolean] = {
+    client.kvService.deleteKey(providerPath) map { ret =>
+      if (ret == 1) true else false
+    }
+  }
 }
