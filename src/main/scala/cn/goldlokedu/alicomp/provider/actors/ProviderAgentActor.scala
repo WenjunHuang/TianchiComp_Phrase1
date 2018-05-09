@@ -18,7 +18,7 @@ class ProviderAgentActor(capType: CapacityType.Value,
     val path = self.path
 
     val registeredAgent =
-      RegisteredAgent(capType, name, path)
+      RegisteredAgent(capType, name, path.toStringWithoutAddress)
     etcdClient.addProvider(registeredAgent)
   }
 
