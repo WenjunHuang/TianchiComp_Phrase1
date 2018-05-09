@@ -8,9 +8,9 @@ import akka.io.Tcp.Event
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
-import scala.concurrent.duration._
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 class DubboActor(dubboHost: String,
                  dubboPort: Int,
@@ -57,7 +57,7 @@ class DubboActor(dubboHost: String,
 
       // debug
       implicit val ec = context.dispatcher
-      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      context.system.scheduler.schedule(5 second, 5 second, self, PrintPayload)
 
       context become ready
     case _ =>

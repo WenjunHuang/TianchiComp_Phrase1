@@ -19,7 +19,7 @@ COPY --from=jars /root/workspace/services/mesh-provider/target/mesh-provider-1.0
 COPY --from=jars /root/workspace/services/mesh-consumer/target/mesh-consumer-1.0-SNAPSHOT.jar /root/dists/mesh-consumer.jar
 COPY --from=builder /root/workspace/agent/target/scala-2.12/mesh-agent.jar /root/dists/mesh-agent.jar
 
-COPY --from=builder /usr/local/bin/docker-entrypoint.sh /usr/local/bin
+COPY --from=jars /usr/local/bin/docker-entrypoint.sh /usr/local/bin
 COPY start-agent.sh /usr/local/bin
 
 RUN set -ex && mkdir -p /root/logs

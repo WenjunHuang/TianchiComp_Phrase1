@@ -1,5 +1,5 @@
 import cn.goldlokedu.alicomp.documents.{CapacityType, RegisteredAgent}
-import cn.goldlokedu.alicomp.etcd.EctdClient
+import cn.goldlokedu.alicomp.etcd.EtcdClient
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 object EctdTest {
   def main(args: Array[String]): Unit = {
-    val client = new EctdClient("192.168.2.248", 2379)
+    val client = new EtcdClient("192.168.2.248", 2379)
     val ret = client.addProvider(RegisteredAgent(CapacityType.L, "test", "tcp://11111/xxxx"))
     val result = Await.result(ret, 10.seconds)
     println(result)
