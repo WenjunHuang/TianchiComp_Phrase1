@@ -28,9 +28,9 @@ class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, t
         )
 
         onComplete(f) {
-          case Success(BenchmarkResponse(rid, status, result)) if status == 20 =>
+          case Success(BenchmarkResponse(_, _, Some(result))) =>
             complete(StatusCodes.OK -> result.toString)
-          case Success(BenchmarkResponse(rid, status, result)) if status != 20 =>
+          case Success(_) =>
             complete(StatusCodes.InternalServerError)
           case Failure(cause) =>
             complete(StatusCodes.InternalServerError)
