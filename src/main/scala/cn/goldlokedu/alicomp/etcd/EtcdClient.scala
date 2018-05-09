@@ -4,9 +4,7 @@ import cn.goldlokedu.alicomp.documents.RegisteredAgent
 import org.etcd4s.pb.mvccpb.KeyValue
 import spray.json._
 import org.etcd4s.{Etcd4sClient, Etcd4sClientConfig}
-import org.etcd4s.implicits._
 import org.etcd4s.formats.Formats._
-import cn.goldlokedu.alicomp.util.json.ServiceProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +21,12 @@ class EtcdClient(host: String, port: Int)(implicit dispatcher: ExecutionContext)
       elem.kvs.map { kv =>
         kv.value.toStringUtf8.parseJson.convertTo[RegisteredAgent]
       }
+    }
+  }
+
+  def deleteProviders(): Future[Boolean] = {
+    client.kvService.deleteKey(providerPath) map { ret =>
+      if (ret == 1) true else false
     }
   }
 }
