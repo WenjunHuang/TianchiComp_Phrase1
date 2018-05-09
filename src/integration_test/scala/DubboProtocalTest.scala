@@ -1,7 +1,7 @@
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
@@ -10,6 +10,7 @@ import akka.pattern._
 import akka.util.Timeout
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.routing.{ActorRefRoutee, RoundRobinRoutingLogic, Router}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 
 import scala.concurrent._
@@ -18,22 +19,38 @@ import scala.util.{Failure, Success}
 
 object DubboProtocalTest extends App {
 
+
   implicit val system = ActorSystem("Test")
   implicit val materializer = ActorMaterializer(ActorMaterializerSettings(system))
   implicit val logger = system.log
   implicit val ec = system.dispatcher
   implicit val timeout = Timeout(5 seconds)
-  val host = "192.168.2.248"
+  val host1 = "192.168.2.221"
+  val host2 = "192.168.2.248"
   val port1 = 20890
   val port2 = 20891
   val port3 = 20892
 
 
-  val dubboActors = Seq(
-    system.actorOf(Props(classOf[DubboActor],host, port1, 200,logger)),//.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor],host, port2, 200,logger)),//.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor],host, port3, 200,logger))//.withMailbox("prio-dispatcher"))
+  val dubboActors = Vector(
+    system.actorOf(Props(classOf[DubboActor], host1, port1, 100, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host1, port1, 100, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
+    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger)), //.withMailbox("prio-dispatcher"))
+    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger))
   )
+
+  class RouterActor extends Actor {
+    val router = Router(RoundRobinRoutingLogic(), dubboActors.map(ActorRefRoutee(_)))
+
+    override def receive: Receive = {
+      case any =>
+        router.route(any, sender)
+    }
+  }
+
+  val router = system.actorOf(Props(new RouterActor))
 
 
   def routers: Route =
@@ -44,8 +61,8 @@ object DubboProtocalTest extends App {
         "hash",
         "Ljava/lang/String;",
         value)
-      val index = ThreadLocalRandom.current().nextInt(3)
-      val fut = (dubboActors(index) ? request).mapTo[BenchmarkResponse]
+      val index = ThreadLocalRandom.current().nextInt(dubboActors.size)
+      val fut = (router ? request).mapTo[BenchmarkResponse]
       onComplete(fut) {
         case Success(msg) =>
           if (msg.status == 20)
@@ -55,7 +72,7 @@ object DubboProtocalTest extends App {
             complete(StatusCodes.InternalServerError)
           }
         case Failure(cause) =>
-//          logger.error(cause,s"server error")
+          //          logger.error(cause,s"server error")
           complete(StatusCodes.InternalServerError)
       }
     }
