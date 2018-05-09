@@ -32,13 +32,13 @@ trait AliComp extends Actors
   def runAsConsumerAgent(): Unit = {
     val consumerAgent = system.actorOf(Props(new ConsumerAgentActor))
     val router = new ConsumerAgentRouter(consumerAgent)
-
     Http().bindAndHandle(router.routers, consumerHttpHost, consumerHttpPort)
+    logger.info(s"start as consumer,listening on ${consumerHttpHost}:${consumerHttpPort}")
   }
 
   def startProvider(cap: CapacityType.Value): Unit = {
     system.actorOf(Props(new ProviderAgentActor(
-      CapacityType.S,
+      cap,
       dubboProviderConnectionCount,
       dubboProviderMaxConcurrentCountPerConnection,
       dubboProviderHost,

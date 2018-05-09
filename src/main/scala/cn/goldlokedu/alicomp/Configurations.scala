@@ -11,6 +11,7 @@ trait SystemConfiguration {
   this: Configuration ⇒
   private def systemConfig = config.getConfig("system")
 
+
   def etcdHost = systemConfig.getString("etcd-host")
 
   def etcdPort = systemConfig.getInt("etcd-port")
@@ -30,6 +31,10 @@ trait ConsumerConfiguration {
 trait ProviderConfiguration {
   this: Configuration =>
   private def providerConfig = config.getConfig("provider")
+
+  def dubboProviderHost = providerConfig.getString("dubbo-provider-host")
+
+  def dubboProviderPort = providerConfig.getInt("dubbo-provider-port")
 
   def dubboProviderConnectionCount = providerConfig.getInt("dubbo-provider-connection-count")
 

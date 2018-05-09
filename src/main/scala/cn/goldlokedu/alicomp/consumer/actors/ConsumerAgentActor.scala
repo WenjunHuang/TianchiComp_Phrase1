@@ -1,6 +1,7 @@
 package cn.goldlokedu.alicomp.consumer.actors
 
 import akka.actor.{Actor, ActorRef}
+import akka.event.LoggingAdapter
 import akka.pattern._
 import akka.util.Timeout
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType, RegisteredAgent}
@@ -12,7 +13,8 @@ import scala.util.Random
 
 class ConsumerAgentActor(implicit etcdClient: EtcdClient,
                          ec: ExecutionContext,
-                         to: Timeout) extends Actor {
+                         to: Timeout,
+                         logger:LoggingAdapter) extends Actor {
 
   import ConsumerAgentActor._
 
@@ -42,6 +44,7 @@ class ConsumerAgentActor(implicit etcdClient: EtcdClient,
     case r: Seq[(CapacityType.Value, ActorRef)] =>
       providerAgents ++= r
       context become ready
+      logger.info(s"get provide agens: ${providerAgents.mkString(" ")}")
   }
 
   def ready: Receive = {
@@ -50,7 +53,7 @@ class ConsumerAgentActor(implicit etcdClient: EtcdClient,
   }
 
   def selectProviderAgent: ActorRef = {
-    val roll = Random.nextInt()
+    val roll = Random.nextInt(6)
     val cap = roll match {
       case 0 =>
         CapacityType.S

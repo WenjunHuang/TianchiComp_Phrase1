@@ -25,8 +25,7 @@ object DubboProtocalTest extends App {
   implicit val logger = system.log
   implicit val ec = system.dispatcher
   implicit val timeout = Timeout(5 seconds)
-  val host1 = "192.168.2.221"
-  val host2 = "192.168.2.248"
+  val host1 = "192.168.2.248"
   val port1 = 20890
   val port2 = 20891
   val port3 = 20892
@@ -34,11 +33,11 @@ object DubboProtocalTest extends App {
 
   val dubboActors = Vector(
     system.actorOf(Props(classOf[DubboActor], host1, port1, 100, logger)), //.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor], host1, port1, 100, logger)), //.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
-    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger)), //.withMailbox("prio-dispatcher"))
-    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger))
+    system.actorOf(Props(classOf[DubboActor], host1, port1, 100, logger)) //.withMailbox("prio-dispatcher")),
+//    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
+//    system.actorOf(Props(classOf[DubboActor], host1, port2, 100, logger)), //.withMailbox("prio-dispatcher")),
+//    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger)), //.withMailbox("prio-dispatcher"))
+//    system.actorOf(Props(classOf[DubboActor], host1, port3, 100, logger))
   )
 
   class RouterActor extends Actor {
