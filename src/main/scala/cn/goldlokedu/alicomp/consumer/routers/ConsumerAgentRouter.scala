@@ -29,7 +29,7 @@ class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, t
 
         onComplete(f) {
           case Success(BenchmarkResponse(_, _, Some(result))) =>
-            complete(StatusCodes.OK -> result.toString)
+            complete(StatusCodes.OK -> String.valueOf(result))
           case Success(BenchmarkResponse(_,status,_)) =>
             logger.error(s"dubbo return status: $status")
             complete(StatusCodes.InternalServerError)
