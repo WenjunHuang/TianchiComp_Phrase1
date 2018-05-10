@@ -33,25 +33,9 @@ trait AliComp extends Actors
   }
 
   def runAsConsumerAgent(): Unit = {
-    val providerAgentActorsFuture = etcdClient.providers() flatMap { providers =>
-      Future.sequence(providers map { provider =>
-        system.actorSelection(provider.address).resolveOne() map {
-          (provider.cap, _)
-        }
-      })
-    }
-
-    providerAgentActorsFuture.onComplete {
-      case Success(providerAgentActors) if providerAgentActors.nonEmpty =>
-        logger.info(s"successful to get provider agent: ${providerAgentActors}")
-        val actor = system.actorOf(Props(new ConsumerAgentActor(Map(providerAgentActors: _*))))
-        val router1: Route = new ConsumerAgentRouter(actor).routers
-        Http().bindAndHandle(router1, consumerHttpHost, consumerHttpPort)
-      case Success(_) =>
-        logger.error(s"no provider agents available")
-      case Failure(ex) =>
-        logger.error(s"error in get provider agent", ex)
-    }
+    val actor = system.actorOf(Props(new ConsumerAgentActor))
+    val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
+    Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
 
   def startProvider(cap: CapacityType.Value): Unit = {
