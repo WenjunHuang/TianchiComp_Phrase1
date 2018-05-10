@@ -23,7 +23,7 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
 
   override def preStart(): Unit = {
     self ! GetProviderAgents
-    context.system.scheduler.schedule(1 seconds, 5 seconds, self, GetProviderAgents)
+    context.system.scheduler.scheduleOnce(5 seconds, self, GetProviderAgents)
   }
 
   override def receive: Receive = ready
