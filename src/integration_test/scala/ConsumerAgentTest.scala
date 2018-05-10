@@ -41,3 +41,9 @@
 //    Http().bindAndHandle(routers, "0.0.0.0", 8090)
 //  }
 //}
+
+object ConsumerAgentTest {
+  def main(args: Array[String]): Unit = {
+    println()
+  }
+}

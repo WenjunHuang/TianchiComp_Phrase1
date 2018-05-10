@@ -2,11 +2,15 @@ package cn.goldlokedu.alicomp
 
 import akka.actor.Props
 import akka.http.scaladsl.Http
-import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
-import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
+import akka.http.scaladsl.server.Route
+import cn.goldlokedu.alicomp.consumer.ProviderAgentActor
+import cn.goldlokedu.alicomp.consumer.route.ConsumerRoute
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
 import com.typesafe.config.ConfigFactory
+import cn.goldlokedu.alicomp.consumer.ConsumerAgentActor
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 trait AliComp extends Actors
   with AkkaInfrastructure
@@ -15,7 +19,6 @@ trait AliComp extends Actors
   with ProviderConfiguration
   with ConsumerConfiguration {
   override def config = ConfigFactory.load()
-
 
   def runAsProviderSmallAgent(): Unit = {
     startProvider(CapacityType.S)
@@ -30,10 +33,20 @@ trait AliComp extends Actors
   }
 
   def runAsConsumerAgent(): Unit = {
-    val consumerAgent = system.actorOf(Props(new ConsumerAgentActor))
-    val router = new ConsumerAgentRouter(consumerAgent)
-    Http().bindAndHandle(router.routers, consumerHttpHost, consumerHttpPort)
-    logger.info(s"start as consumer,listening on ${consumerHttpHost}:${consumerHttpPort}")
+    val providerAgentActorsFuture = etcdClient.providers() flatMap { providers =>
+      Future.sequence(providers map { provider => system.actorSelection(provider.address).resolveOne() map { (provider.cap, _) } })
+    } map { refs =>
+      refs map { ref => ProviderAgentActor(ref._1, ref._2) }
+    }
+
+    providerAgentActorsFuture.onComplete {
+      case Success(providerAgentActors) =>
+        val actor = system.actorOf(Props(classOf[ConsumerAgentActor], providerAgentActors))
+        val router1: Route = new ConsumerRoute(actor).invoke
+        Http().bindAndHandle(router1, "0.0.0.0", 8090)
+      case Failure(ex) =>
+
+    }
   }
 
   def startProvider(cap: CapacityType.Value): Unit = {
