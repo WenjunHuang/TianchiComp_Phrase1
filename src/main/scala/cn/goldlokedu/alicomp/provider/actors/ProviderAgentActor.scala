@@ -1,43 +1,71 @@
 package cn.goldlokedu.alicomp.provider.actors
 
-import akka.actor._
+import akka.actor.{Actor, Props, Status}
 import akka.event.LoggingAdapter
-import akka.routing.SmallestMailboxPool
-import cn.goldlokedu.alicomp.documents._
+import akka.pattern._
+import akka.routing._
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
+import cn.goldlokedu.alicomp.util.GetActorRemoteAddressExtension
+
+import scala.concurrent.ExecutionContext
 
 class ProviderAgentActor(capType: CapacityType.Value,
                          dubboActorCount: Int,
                          threhold: Int,
                          dubboHost: String,
                          dubboPort: Int)(implicit etcdClient: EtcdClient,
-                                         logger: LoggingAdapter) extends Actor with ActorLogging {
+                                         logger: LoggingAdapter) extends Actor {
+
+  implicit val ec: ExecutionContext = context.system.dispatcher
+
+  import ProviderAgentActor._
+
+  var router = {
+    val routees = Vector.fill(dubboActorCount) {
+      val r = context.actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)))
+      context watch r
+      ActorRefRoutee(r)
+    }
+    Router(RoundRobinRoutingLogic(), routees)
+  }
 
   override def preStart(): Unit = {
-    val name = self.path.name
-    val path = self.path
-
-    val registeredAgent =
-      RegisteredAgent(capType, name, path.toStringWithoutAddress)
-    etcdClient.addProvider(registeredAgent)
+    self ! Init
   }
 
-  val dubbo: ActorRef =
-    context.actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold))
-                    .withRouter(
-                      new SmallestMailboxPool(dubboActorCount)
-                        .withSupervisorStrategy(SupervisorStrategy.defaultStrategy)))
+  override def receive: Receive = init
 
-  override def receive: Receive = {
-
-    case request: BenchmarkRequest =>
-      dubbo.forward(request)
-
-    case response: BenchmarkResponse =>
-      sender ! response
-
-    case Terminated(child) =>
-      log.debug("{} has been terminated", child.path)
+  private def init: Receive = {
+    case Init =>
+      initialize()
+    case PublishedToEtcd =>
+      logger.info("address published to etcd")
+      context become ready
+    case Status.Failure(cause) =>
+      logger.error(s"can not publish tot etcd", cause)
+      context stop self
   }
+
+  private def ready: Receive = {
+    case r: BenchmarkRequest =>
+      router.route(r, sender())
+  }
+
+
+  def initialize() = {
+    //debug
+    val address = GetActorRemoteAddressExtension(context.system).remotePath(self.path)
+    logger.info(address.toString)
+    etcdClient.addProvider(RegisteredAgent(capType, address.toString, address.toString))
+      .map(_ => PublishedToEtcd) pipeTo self
+  }
+}
+
+object ProviderAgentActor {
+
+  case object Init
+
+  case object PublishedToEtcd
 
 }

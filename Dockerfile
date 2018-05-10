@@ -21,6 +21,7 @@ COPY --from=builder /root/workspace/agent/target/scala-2.12/mesh-agent.jar /root
 
 COPY --from=jars /usr/local/bin/docker-entrypoint.sh /usr/local/bin
 COPY start-agent.sh /usr/local/bin
+RUN chmod 777 /usr/local/bin/start-agent.sh
 
 RUN set -ex && mkdir -p /root/logs
 
