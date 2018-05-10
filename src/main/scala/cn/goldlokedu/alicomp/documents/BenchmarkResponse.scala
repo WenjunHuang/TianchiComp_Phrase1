@@ -15,9 +15,18 @@ object BenchmarkResponse {
       var result: Option[Int] = None
 
       if (status == 20) {
-        result = Some(raw.foldLeft(0) { (accum, it) =>
-          accum * 10 + (it - 48) // 数字的ascii码-48=数字值
-        })
+        if (raw.head == 45){
+          // 负数
+          val r = raw.drop(1).foldLeft(0) { (accum, it) =>
+            accum * 10 + (it - 48) // 数字的ascii码-48=数字值
+          }
+          result = Some(-r)
+        }else {
+          // 正数
+          result = Some(raw.foldLeft(0) { (accum, it) =>
+            accum * 10 + (it - 48) // 数字的ascii码-48=数字值
+          })
+        }
       }
       BenchmarkResponse(message.requestId, status, result)
     }

@@ -1,5 +1,6 @@
 #带sbt的编译环境
-FROM registry.cn-hangzhou.aliyuncs.com/rang/sbt-builder AS builder
+#FROM registry.cn-hangzhou.aliyuncs.com/rang/sbt-builder AS builder
+FROM registry.cn-shenzhen.aliyuncs.com/goldlok/sbt-builder AS builder
 RUN mkdir -p /root/.sbt
 RUN echo '[repositories] \n\
 local\n\
