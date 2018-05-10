@@ -25,7 +25,6 @@ if [[ "$1" == "consumer" ]]; then
        -DACTOR_SYSTEM_PORT=2551 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
-       -DHTTP_LISTENING_HOST=${AGENT_HOST} \
        -DHTTP_LISTENING_PORT=20000 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-small" ]]; then
