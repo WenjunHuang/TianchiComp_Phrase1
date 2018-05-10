@@ -3,8 +3,8 @@ FROM registry.cn-hangzhou.aliyuncs.com/rang/sbt-builder AS builder
 RUN mkdir -p /root/.sbt
 RUN echo '[repositories] \n\
 local\n\
-my-maven: http://192.168.2.247:8078\n\
-my-ivy: http://192.168.2.247:8078, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]\n\
+my-maven: http://61.145.62.114:8078\n\
+my-ivy: http://61.145.62.114:8078, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]\n\
 ' > /root/.sbt/repositories
 
 RUN mkdir -p /root/workspace/agent
