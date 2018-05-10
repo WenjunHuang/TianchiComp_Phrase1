@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#HOST=$(ip addr show docker0 | grep 'inet\b' | awk '{print $2}' | cut -d '/' -f 1)
 # production
-#ETCD_HOST=${HOST}
-#ETCD_PORT=2379
-#AGENT_HOST=${HOST}
-#DUBBO_HOST=${HOST}
-#AGENT_PATH=/root/dists/mesh-agent.jar
+HOST=$(ip addr show docker0 | grep 'inet\b' | awk '{print $2}' | cut -d '/' -f 1)
+ETCD_HOST=${HOST}
+ETCD_PORT=2379
+AGENT_HOST=${HOST}
+DUBBO_HOST=${HOST}
+AGENT_PATH=/root/dists/mesh-agent.jar
 
 # for local test
-ETCD_HOST=192.168.2.248
-ETCD_PORT=2379
-AGENT_HOST=192.168.2.44
-DUBBO_HOST=192.168.2.221
-AGENT_PATH=/Users/xxzyjy/Sources/TianChi4thCompetition/target/scala-2.12/mesh-agent.jar
+#ETCD_HOST=192.168.2.248
+#ETCD_PORT=2379
+#AGENT_HOST=192.168.2.44
+#DUBBO_HOST=192.168.2.221
+#AGENT_PATH=/Users/xxzyjy/Sources/TianChi4thCompetition/target/scala-2.12/mesh-agent.jar
 
 if [[ "$1" == "consumer" ]]; then
   echo "Starting consumer agent..."
