@@ -45,6 +45,7 @@ trait AliComp extends Actors
       dubboProviderPort)))
   }
 
+
   runType match {
     case "provider-small" => runAsProviderSmallAgent()
     case "provider-medium" => runAsProviderMediumAgent()

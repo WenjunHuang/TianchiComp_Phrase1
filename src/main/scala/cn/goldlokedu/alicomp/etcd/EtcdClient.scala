@@ -11,7 +11,7 @@ import cn.goldlokedu.alicomp.util.json.ServiceProtocol._
 import scala.concurrent.{ExecutionContext, Future}
 
 class EtcdClient(host: String, port: Int)(implicit dispatcher: ExecutionContext) {
-  private val providerPath = "providers_huangwj/"
+  private val providerPath = "providers/"
   private val client = Etcd4sClient.newClient(Etcd4sClientConfig(address = host, port = port))
 
   def addProvider(agent: RegisteredAgent): Future[Option[KeyValue]] = {
@@ -25,4 +25,5 @@ class EtcdClient(host: String, port: Int)(implicit dispatcher: ExecutionContext)
       }
     }
   }
+
 }

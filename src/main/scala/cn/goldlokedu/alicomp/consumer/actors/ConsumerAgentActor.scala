@@ -65,6 +65,7 @@ class ConsumerAgentActor(implicit etcdClient: EtcdClient,
         CapacityType.L
     }
 
+
     providerAgents(cap)
   }
 }
