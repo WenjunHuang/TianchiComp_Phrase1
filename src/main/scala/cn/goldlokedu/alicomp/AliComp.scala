@@ -3,14 +3,11 @@ package cn.goldlokedu.alicomp
 import akka.actor.Props
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import cn.goldlokedu.alicomp.consumer.ProviderAgentActor
-import cn.goldlokedu.alicomp.consumer.route.ConsumerRoute
+import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
 import com.typesafe.config.ConfigFactory
-import cn.goldlokedu.alicomp.consumer.ConsumerAgentActor
-import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
-import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}

@@ -27,7 +27,6 @@ class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, t
           parameter = param
         )
 
-
         onComplete(f) {
           case Success(BenchmarkResponse(_, _, Some(result))) =>
             complete(StatusCodes.OK -> result.toString)
