@@ -7,6 +7,7 @@ import akka.routing._
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import cn.goldlokedu.alicomp.util.GetActorRemoteAddressExtension
+import scala.concurrent.duration._
 
 import scala.concurrent.ExecutionContext
 
@@ -44,7 +45,7 @@ class ProviderAgentActor(capType: CapacityType.Value,
       context become ready
     case Status.Failure(cause) =>
       logger.error(s"can not publish tot etcd", cause)
-      context stop self
+      context.system.scheduler.scheduleOnce(5 seconds,self,Init)
   }
 
   private def ready: Receive = {
