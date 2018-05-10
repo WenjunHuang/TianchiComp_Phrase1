@@ -16,8 +16,7 @@ import scala.util.{Failure, Success}
 
 class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout, logger: LoggingAdapter) {
   val routers: Route =
-    (pathPrefix("invoke") &
-      post &
+    (post &
       formFields('interface.as[String], 'method.as[String], 'parameterTypesString.as[String], 'parameter.as[String])) {
       (intr, method, pt, param) =>
         val f = agentActor ? BenchmarkRequest(
