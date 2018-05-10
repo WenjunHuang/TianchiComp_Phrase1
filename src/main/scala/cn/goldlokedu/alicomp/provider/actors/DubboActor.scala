@@ -57,8 +57,8 @@ class DubboActor(dubboHost: String,
       unstashAll()
 
       // debug
-      implicit val ec = context.dispatcher
-      context.system.scheduler.schedule(5 second, 5 second, self, PrintPayload)
+//      implicit val ec = context.dispatcher
+//      context.system.scheduler.schedule(5 second, 5 second, self, PrintPayload)
 
       context become ready
     case _ =>

@@ -44,7 +44,7 @@ class ProviderAgentActor(capType: CapacityType.Value,
       logger.info("address published to etcd")
       context become ready
     case Status.Failure(cause) =>
-      logger.error(s"can not publish tot etcd", cause)
+      logger.error(s"can not publish to etcd", cause)
       context.system.scheduler.scheduleOnce(5 seconds,self,Init)
   }
 
