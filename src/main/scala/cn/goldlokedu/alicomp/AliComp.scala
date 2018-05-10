@@ -42,12 +42,15 @@ trait AliComp extends Actors
     }
 
     providerAgentActorsFuture.onComplete {
-      case Success(providerAgentActors) =>
+      case Success(providerAgentActors) if providerAgentActors.nonEmpty =>
+        logger.info(s"successful to get provider agent: ${providerAgentActors}")
         val actor = system.actorOf(Props(new ConsumerAgentActor(Map(providerAgentActors: _*))))
         val router1: Route = new ConsumerAgentRouter(actor).routers
         Http().bindAndHandle(router1, consumerHttpHost, consumerHttpPort)
+      case Success(_) =>
+        logger.error(s"no provider agents available")
       case Failure(ex) =>
-
+        logger.error(s"error in get provider agent", ex)
     }
   }
 
