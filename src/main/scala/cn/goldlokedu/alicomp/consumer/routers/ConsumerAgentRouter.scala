@@ -3,6 +3,7 @@ package cn.goldlokedu.alicomp.consumer.routers
 import java.util.UUID
 
 import akka.actor.ActorRef
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{formFields, path, _}
 import akka.http.scaladsl.server.Route
@@ -13,7 +14,7 @@ import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout) {
+class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout, logger: LoggingAdapter) {
   val routers: Route =
     (pathPrefix("invoke") &
       post &
@@ -33,6 +34,7 @@ class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, t
           case Success(_) =>
             complete(StatusCodes.InternalServerError)
           case Failure(cause) =>
+            logger.error(s"error in connect provider", cause)
             complete(StatusCodes.InternalServerError)
         }
 

@@ -12,12 +12,6 @@ class ConsumerAgentActor(providerAgents: Map[CapacityType.Value, ActorRef])(impl
                                                                             to: Timeout,
                                                                             logger: LoggingAdapter) extends Actor {
 
-  import ConsumerAgentActor._
-
-  override def preStart(): Unit = {
-    self ! Init
-  }
-
   override def receive: Receive = {
     case req: BenchmarkRequest =>
       selectProviderAgent.tell(req, sender)
