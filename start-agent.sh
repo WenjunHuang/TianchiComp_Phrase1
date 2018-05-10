@@ -39,8 +39,8 @@ elif [[ "$1" == "provider-small" ]]; then
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20889 \
-       -DDUBBO_CONNECTION_COUNT=1 \
-       -DDUBBO_COUNT_PER_CONNECTION=200 \
+       -DDUBBO_CONNECTION_COUNT=4 \
+       -DDUBBO_COUNT_PER_CONNECTION=50 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-medium" ]]; then
   echo "Starting medium provider agent..."
@@ -54,8 +54,8 @@ elif [[ "$1" == "provider-medium" ]]; then
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20890 \
-       -DDUBBO_CONNECTION_COUNT=1 \
-       -DDUBBO_COUNT_PER_CONNECTION=200 \
+       -DDUBBO_CONNECTION_COUNT=4 \
+       -DDUBBO_COUNT_PER_CONNECTION=50 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-large" ]]; then
   echo "Starting large provider agent..."
@@ -69,8 +69,8 @@ elif [[ "$1" == "provider-large" ]]; then
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20891 \
-       -DDUBBO_CONNECTION_COUNT=1 \
-       -DDUBBO_COUNT_PER_CONNECTION=200 \
+       -DDUBBO_CONNECTION_COUNT=4 \
+       -DDUBBO_COUNT_PER_CONNECTION=50 \
        ${AGENT_PATH}
 else
   echo "Unrecognized arguments, exit."

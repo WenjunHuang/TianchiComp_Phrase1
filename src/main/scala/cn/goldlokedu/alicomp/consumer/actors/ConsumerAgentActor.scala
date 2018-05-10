@@ -29,10 +29,11 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
   override def receive: Receive = ready
 
   def ready: Receive = {
-    case req: BenchmarkRequest =>
+    case req@BenchmarkRequest(_,_,_,_,_) =>
       selectProviderAgent match {
         case Some(actorRef) =>
-          actorRef.tell(req, sender)
+          actorRef forward req
+        //          actorRef.tell(req, sender)
         case None =>
           sender ! Status.Failure(new Exception("not provider"))
       }
