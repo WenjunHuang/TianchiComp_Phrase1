@@ -94,7 +94,7 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
         CapacityType.L
     }
 
-    providerAgents.get(cap)
+    providerAgents.get(cap).orElse(providerAgents.headOption.map(_._2))
   }
 }
 

@@ -19,7 +19,7 @@ mainClass in assembly := {
 assemblyMergeStrategy in assembly := {
   case "application.conf" ⇒ MergeStrategy.concat
   case "reference.conf" ⇒ MergeStrategy.concat
-  case "META-INF/io.netty.versions.properties" => MergeStrategy.concat
+  case "META-INF\\io.netty.versions.properties" => MergeStrategy.concat
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
