@@ -20,6 +20,7 @@ class DubboActor(dubboHost: String,
   import Tcp._
   import context.system
 
+  implicit val ec = context.dispatcher
   // Akka IO
   var connection: Option[ActorRef] = None
 
@@ -44,7 +45,7 @@ class DubboActor(dubboHost: String,
       connectToDubbo()
     case CommandFailed(_: Connect) =>
       logger.error(s"can not connect to dubbo at $dubboHost:$dubboPort")
-      context stop self
+      context.system.scheduler.scheduleOnce(5 seconds,self,Init)
     case Connected(remote, local) =>
       logger.info(
         s"""
