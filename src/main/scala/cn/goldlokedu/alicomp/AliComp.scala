@@ -9,6 +9,9 @@ import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
 import com.typesafe.config.ConfigFactory
 import cn.goldlokedu.alicomp.consumer.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
@@ -34,16 +37,18 @@ trait AliComp extends Actors
 
   def runAsConsumerAgent(): Unit = {
     val providerAgentActorsFuture = etcdClient.providers() flatMap { providers =>
-      Future.sequence(providers map { provider => system.actorSelection(provider.address).resolveOne() map { (provider.cap, _) } })
-    } map { refs =>
-      refs map { ref => ProviderAgentActor(ref._1, ref._2) }
+      Future.sequence(providers map { provider =>
+        system.actorSelection(provider.address).resolveOne() map {
+          (provider.cap, _)
+        }
+      })
     }
 
     providerAgentActorsFuture.onComplete {
       case Success(providerAgentActors) =>
-        val actor = system.actorOf(Props(classOf[ConsumerAgentActor], providerAgentActors))
-        val router1: Route = new ConsumerRoute(actor).invoke
-        Http().bindAndHandle(router1, "0.0.0.0", 8090)
+        val actor = system.actorOf(Props(new ConsumerAgentActor(Map(providerAgentActors: _*))))
+        val router1: Route = new ConsumerAgentRouter(actor).routers
+        Http().bindAndHandle(router1, consumerHttpHost, consumerHttpPort)
       case Failure(ex) =>
 
     }
