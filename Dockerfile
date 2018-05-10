@@ -1,6 +1,6 @@
 #带sbt的编译环境
 #FROM registry.cn-hangzhou.aliyuncs.com/rang/sbt-builder AS builder
-FROM registry-internal.cn-shenzhen.aliyuncs.com/goldlok/sbt-builder AS builder
+FROM registry.cn-shenzhen.aliyuncs.com/goldlok/sbt-builder AS builder
 RUN mkdir -p /root/.sbt
 RUN echo '[repositories] \n\
 local\n\
@@ -13,9 +13,9 @@ COPY . /root/workspace/agent
 WORKDIR /root/workspace/agent
 RUN set -ex && sbt assembly
 
-FROM registry-internal.cn-hangzhou.aliyuncs.com/aliware2018/services AS jars
+FROM registry.cn-hangzhou.aliyuncs.com/aliware2018/services AS jars
 
-FROM registry-internal.cn-hangzhou.aliyuncs.com/aliware2018/debian-jdk8
+FROM registry.cn-hangzhou.aliyuncs.com/aliware2018/debian-jdk8
 COPY --from=jars /root/workspace/services/mesh-provider/target/mesh-provider-1.0-SNAPSHOT.jar /root/dists/mesh-provider.jar
 COPY --from=jars /root/workspace/services/mesh-consumer/target/mesh-consumer-1.0-SNAPSHOT.jar /root/dists/mesh-consumer.jar
 COPY --from=builder /root/workspace/agent/target/scala-2.12/mesh-agent.jar /root/dists/mesh-agent.jar
