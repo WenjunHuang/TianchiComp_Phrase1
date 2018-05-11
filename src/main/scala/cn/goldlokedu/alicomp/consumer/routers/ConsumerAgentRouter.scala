@@ -34,7 +34,7 @@ class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, t
             logger.error(s"dubbo return status: $status")
             complete(StatusCodes.InternalServerError)
           case Failure(cause) =>
-            logger.error(s"error in connect provider", cause)
+            logger.error(cause,s"error in connect provider")
             complete(StatusCodes.InternalServerError)
         }
 
