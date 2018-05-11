@@ -43,7 +43,7 @@ trait AliComp extends Actors
 
   def runAsConsumerAgent(): Unit = {
     logger.info("run as consumer")
-    val actor = system.actorOf(Props(new ConsumerAgentActor).withMailbox("single-consumer-mailbox"))
+    val actor = system.actorOf(Props(new ConsumerAgentActor))
     val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
