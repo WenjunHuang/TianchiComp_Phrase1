@@ -17,7 +17,7 @@ mainClass in assembly := {
 
 // 打包
 assemblyMergeStrategy in assembly := {
-  case "application.conf" ⇒ MergeStrategy.concat
+  case "consumer.conf" ⇒ MergeStrategy.concat
   case "reference.conf" ⇒ MergeStrategy.concat
   case "META-INF/io.netty.versions.properties" => MergeStrategy.concat
   case x =>

@@ -9,16 +9,21 @@ import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
-
 trait AliComp extends Actors
   with AkkaInfrastructure
   with Configuration
   with SystemConfiguration
   with ProviderConfiguration
   with ConsumerConfiguration {
-  override def config = ConfigFactory.load()
+  override def config = {
+    Option(System.getenv("RUN_TYPE")) match {
+      case Some(runType) =>
+        ConfigFactory.load(runType)
+          .withFallback(ConfigFactory.load())
+      case None =>
+        throw new IllegalStateException("please provide run type")
+    }
+  }
 
   def runAsProviderSmallAgent(): Unit = {
     startProvider(CapacityType.S)
