@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 class ConsumerAgentActor(implicit ec: ExecutionContext,
                          to: Timeout,
                          logger: LoggingAdapter,
-                         etcdClient: EtcdClient) extends Actor with Stash {
+                         etcdClient: EtcdClient) extends Actor {//with Stash {
   var providerAgents: mutable.Map[CapacityType.Value, ActorRef] = mutable.Map.empty
 
   import ConsumerAgentActor._
@@ -75,11 +75,11 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
       }
       logger.info(s"total provider agents:$providerAgents")
       context become ready
-      unstashAll()
+//      unstashAll()
     case Status.Failure(cause) =>
       logger.error(cause, s"error in connect to etcd")
     case _ =>
-      stash()
+//      stash()
   }
 
   def selectProviderAgent: Option[ActorRef] = {

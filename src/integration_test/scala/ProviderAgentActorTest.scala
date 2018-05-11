@@ -3,7 +3,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 object ProviderAgentActorTest extends App with AliComp{
   override def config:Config = ConfigFactory.load("integration_huangwj.conf")
-    .getConfig("provider-config")
+    .getConfig("consumer-config")
     .withFallback(ConfigFactory.load())
   println("Provider ready....")
 }
