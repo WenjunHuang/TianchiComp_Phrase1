@@ -4,17 +4,21 @@ import java.util.UUID
 
 import akka.actor.ActorRef
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Multipart.FormData
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{formFields, path, _}
 import akka.http.scaladsl.server.Route
 import akka.pattern._
 import akka.util.Timeout
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class ConsumerAgentRouter(agentActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout, logger: LoggingAdapter) {
+//  val requestHandler: HttpRequest => Future[HttpResponse] = {request =>
+//    FormData().entity
+//  }
   val routers: Route =
     (post &
       formFields('interface.as[String], 'method.as[String], 'parameterTypesString.as[String], 'parameter.as[String])) {
