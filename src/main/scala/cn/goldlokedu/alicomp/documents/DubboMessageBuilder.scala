@@ -7,9 +7,9 @@ import scala.annotation.tailrec
 /**
   * 根据字节流构建出正确的Dubbo消息
   */
-case class DubboMessageBuilder(chunk: ByteString) {
-  def feed(raw: ByteString): (DubboMessageBuilder, Seq[DubboMessage]) = {
-    extract(chunk ++ raw)
+case class DubboMessageBuilder(first: ByteString) {
+  def feed(next: ByteString): (DubboMessageBuilder, Seq[DubboMessage]) = {
+    extract(first ++ next)
   }
 
   private def extract(data: ByteString): (DubboMessageBuilder, Seq[DubboMessage]) = {
