@@ -33,7 +33,7 @@ elif [[ "$1" == "provider-small" ]]; then
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20889 \
        -DDUBBO_CONNECTION_COUNT=4 \
-       -DDUBBO_COUNT_PER_CONNECTION=20 \
+       -DDUBBO_COUNT_PER_CONNECTION=10 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-medium" ]]; then
   echo "Starting medium provider agent..."

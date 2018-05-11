@@ -17,6 +17,7 @@ object BenchmarkRequest {
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
 
+  @inline
   implicit def toDubboRequest(obj: BenchmarkRequest): ByteString = {
     val builder = ByteString.newBuilder
 
@@ -26,6 +27,11 @@ object BenchmarkRequest {
     val size = body.size
     builder.putInt(size)
     builder.result() ++ body
+  }
+
+  @inline
+  implicit def toConsumerRequest(obj:BenchmarkRequest):ConsumerEncodeBenchmarkRequest = {
+    ConsumerEncodeBenchmarkRequest(obj.requestId,toDubboRequest(obj))
   }
 
   @inline

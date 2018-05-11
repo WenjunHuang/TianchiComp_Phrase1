@@ -7,7 +7,7 @@ import akka.event.LoggingAdapter
 import akka.io.Tcp.Event
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, ConsumerEncodeBenchmarkRequest, DubboMessageBuilder}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -24,13 +24,13 @@ class DubboActor(dubboHost: String,
   // Akka IO
   var connection: Option[ActorRef] = None
 
-  var currentWritingRequest: Option[(ActorRef, BenchmarkRequest)] = None
+  var currentWritingRequest: Option[(ActorRef, Long, ByteString)] = None
 
   // 当前正在执行的请求
   val runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
 
   // 未发送的请求
-  val pendingRequests: mutable.Queue[(ActorRef, BenchmarkRequest)] = mutable.Queue.empty
+  val pendingRequests: mutable.Queue[(ActorRef, Long, ByteString)] = mutable.Queue.empty
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -45,7 +45,7 @@ class DubboActor(dubboHost: String,
       connectToDubbo()
     case CommandFailed(_: Connect) =>
       logger.error(s"can not connect to dubbo at $dubboHost:$dubboPort")
-      context.system.scheduler.scheduleOnce(5 seconds,self,Init)
+      context.system.scheduler.scheduleOnce(5 seconds, self, Init)
     case Connected(remote, local) =>
       logger.info(
         s"""
@@ -57,8 +57,8 @@ class DubboActor(dubboHost: String,
       unstashAll()
 
       // debug
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(5 second, 5 second, self, PrintPayload)
+      //      implicit val ec = context.dispatcher
+      //      context.system.scheduler.schedule(5 second, 5 second, self, PrintPayload)
 
       context become ready
     case _ =>
@@ -70,7 +70,9 @@ class DubboActor(dubboHost: String,
       println(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
 
     case msg: BenchmarkRequest =>
-      trySendRequestToDubbo(sender, msg)
+      trySendRequestToDubbo(sender, msg.requestId, msg)
+    case ConsumerEncodeBenchmarkRequest(requestId, msg) =>
+      trySendRequestToDubbo(sender, requestId, msg)
     case DoneWrite =>
       //请求的数据已经完全发送给dubbo了，接着发下一个（如果还有的话）
       currentWritingRequest = None
@@ -107,20 +109,20 @@ class DubboActor(dubboHost: String,
     (isBelowThrehold, hasAnyPending, notWriting) match {
       case (true, true, true) =>
         pendingRequests.dequeueFirst(_ => true) match {
-          case Some((replyTo, request)) =>
-            sendRequestToDubbo(replyTo, request)
+          case Some((replyTo, requestId, request)) =>
+            sendRequestToDubbo(replyTo, requestId, request)
           case None =>
         }
       case _ =>
     }
   }
 
-  private def trySendRequestToDubbo(replyTo: ActorRef, request: BenchmarkRequest): Unit = {
+  private def trySendRequestToDubbo(replyTo: ActorRef, requestId: Long, request: ByteString): Unit = {
     (isBelowThrehold, noPending, notWriting) match {
       case (true, true, true) =>
-        sendRequestToDubbo(replyTo, request)
+        sendRequestToDubbo(replyTo, requestId, request)
       case _ =>
-        pendingRequests.enqueue((replyTo, request))
+        pendingRequests.enqueue((replyTo, requestId, request))
     }
   }
 
@@ -155,14 +157,14 @@ class DubboActor(dubboHost: String,
     runningRequests.size < threhold
   }
 
-  private def sendRequestToDubbo(replyTo: ActorRef, request: BenchmarkRequest) = {
-    currentWritingRequest = Some((replyTo, request))
-    runningRequests += request.requestId -> replyTo
+  private def sendRequestToDubbo(replyTo: ActorRef, requestId: Long, request: ByteString) = {
+    currentWritingRequest = Some((replyTo, requestId, request))
+    runningRequests += requestId -> replyTo
     connection.get ! Write(request, DoneWrite)
   }
 
-  private def pendRequest(replyTo: ActorRef, request: BenchmarkRequest) = {
-    pendingRequests.enqueue((replyTo, request))
+  private def pendRequest(replyTo: ActorRef, requestId: Long, request: ByteString) = {
+    pendingRequests.enqueue((replyTo, requestId, request))
   }
 
 }

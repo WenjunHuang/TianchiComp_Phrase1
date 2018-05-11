@@ -45,12 +45,12 @@ class ProviderAgentActor(capType: CapacityType.Value,
       context become ready
     case Status.Failure(cause) =>
       logger.error(s"can not publish to etcd", cause)
-      context.system.scheduler.scheduleOnce(5 seconds,self,Init)
+      context.system.scheduler.scheduleOnce(5 seconds, self, Init)
   }
 
   private def ready: Receive = {
-    case r: BenchmarkRequest =>
-      router.route(r, sender())
+    case any =>
+      router.route(any, sender())
   }
 
 

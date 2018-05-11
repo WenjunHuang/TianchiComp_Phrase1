@@ -16,10 +16,12 @@ import scala.concurrent.duration._
 class ConsumerAgentActor(implicit ec: ExecutionContext,
                          to: Timeout,
                          logger: LoggingAdapter,
-                         etcdClient: EtcdClient) extends Actor {//with Stash {
+                         etcdClient: EtcdClient) extends Actor {
+  //with Stash {
   var providerAgents: mutable.Map[CapacityType.Value, ActorRef] = mutable.Map.empty
 
   import ConsumerAgentActor._
+  import BenchmarkRequest._
 
   override def preStart(): Unit = {
     self ! GetProviderAgents
@@ -29,10 +31,10 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
   override def receive: Receive = ready
 
   def ready: Receive = {
-    case req@BenchmarkRequest(_,_,_,_,_) =>
+    case req@BenchmarkRequest(_, _, _, _, _) =>
       selectProviderAgent match {
         case Some(actorRef) =>
-          actorRef forward req
+          actorRef forward toConsumerRequest(req)
         //          actorRef.tell(req, sender)
         case None =>
           sender ! Status.Failure(new Exception("not provider"))
@@ -75,11 +77,11 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
       }
       logger.info(s"total provider agents:$providerAgents")
       context become ready
-//      unstashAll()
+    //      unstashAll()
     case Status.Failure(cause) =>
       logger.error(cause, s"error in connect to etcd")
     case _ =>
-//      stash()
+    //      stash()
   }
 
   def selectProviderAgent: Option[ActorRef] = {
