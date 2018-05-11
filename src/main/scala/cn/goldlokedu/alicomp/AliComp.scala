@@ -15,8 +15,9 @@ trait AliComp extends Actors
   with SystemConfiguration
   with ProviderConfiguration
   with ConsumerConfiguration {
+
   override def config = {
-    Option(System.getenv("RUN_TYPE")) match {
+    Option(System.getProperty("RUN_TYPE")) match {
       case Some(runType) =>
         ConfigFactory.load(runType)
           .withFallback(ConfigFactory.load())
@@ -26,18 +27,22 @@ trait AliComp extends Actors
   }
 
   def runAsProviderSmallAgent(): Unit = {
+    logger.info("run as provider small")
     startProvider(CapacityType.S)
   }
 
   def runAsProviderMediumAgent(): Unit = {
+    logger.info("run as provider medium")
     startProvider(CapacityType.M)
   }
 
   def runAsProviderLargeAgent(): Unit = {
+    logger.info("run as provider large")
     startProvider(CapacityType.L)
   }
 
   def runAsConsumerAgent(): Unit = {
+    logger.info("run as consumer")
     val actor = system.actorOf(Props(new ConsumerAgentActor))
     val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
