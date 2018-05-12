@@ -26,43 +26,29 @@ trait AliComp extends Actors
     }
   }
 
-  def runAsProviderSmallAgent(): Unit = {
-    logger.info("run as provider small")
-    startProvider(CapacityType.S)
-  }
-
-  def runAsProviderMediumAgent(): Unit = {
-    logger.info("run as provider medium")
-    startProvider(CapacityType.M)
-  }
-
-  def runAsProviderLargeAgent(): Unit = {
-    logger.info("run as provider large")
-    startProvider(CapacityType.L)
-  }
-
-  def runAsConsumerAgent(): Unit = {
-    logger.info("run as consumer")
-    val actor = system.actorOf(Props(new ConsumerAgentActor))
+  def runAsConsumerAgent(name: String): Unit = {
+    logger.info(s"run as $name")
+    val actor = system.actorOf(Props(new ConsumerAgentActor), name)
     val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
 
-  def startProvider(cap: CapacityType.Value): Unit = {
+  def startProvider(cap: CapacityType.Value, name: String): Unit = {
+    logger.info(s"run as $name")
     system.actorOf(Props(new ProviderAgentActor(
       cap,
       dubboProviderConnectionCount,
       dubboProviderMaxConcurrentCountPerConnection,
       dubboProviderHost,
-      dubboProviderPort)))
+      dubboProviderPort)), name)
   }
 
 
   runType match {
-    case "provider-small" => runAsProviderSmallAgent()
-    case "provider-medium" => runAsProviderMediumAgent()
-    case "provider-large" => runAsProviderLargeAgent()
-    case "consumer" => runAsConsumerAgent()
+    case name@"provider-small" => startProvider(CapacityType.S, name)
+    case name@"provider-medium" => startProvider(CapacityType.M, name)
+    case name@"provider-large" => startProvider(CapacityType.L, name)
+    case name@"consumer" => runAsConsumerAgent(name)
     case _ =>
       throw new IllegalArgumentException("don't known which type i should run as.(provider/consumer)")
   }
