@@ -34,7 +34,8 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
     case req@BenchmarkRequest(_, _, _, _, _) =>
       selectProviderAgent match {
         case Some(actorRef) =>
-          actorRef forward toConsumerRequest(req)
+          actorRef forward req
+//          actorRef forward toConsumerRequest(req)
         //          actorRef.tell(req, sender)
         case None =>
           sender ! Status.Failure(new Exception("not provider"))
