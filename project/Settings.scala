@@ -16,6 +16,7 @@ object Settings {
     val log4j2Version = "2.9.0"
     val slf4jVersion = "1.7.25"
     val etcdClientVersion = "0.1.4"
+    val http4sVersion = "0.18.11"
   }
 
   val dependencies = Def.setting(Seq(
@@ -25,8 +26,11 @@ object Settings {
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
     "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
+//    "org.http4s" %% "http4s-server" %versions.http4sVersion,
 
-    // log
+    "com.github.finagle" %% "finch-core" % "0.19.0",
+
+  // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
     "org.slf4j" % "slf4j-api" % versions.slf4jVersion,
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % versions.log4j2Version,
