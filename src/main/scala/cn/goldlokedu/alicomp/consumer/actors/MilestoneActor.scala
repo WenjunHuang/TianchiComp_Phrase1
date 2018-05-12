@@ -9,14 +9,14 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class MilestoneActor(implicit ec:ExecutionContext) extends Actor {
+class MilestoneActor(implicit ec: ExecutionContext) extends Actor {
 
   import MilestoneActor._
 
   val senders: mutable.Map[(ActorRef, Long, Int), Duration] = mutable.Map.empty
 
   override def preStart(): Unit = {
-    context.system.scheduler.schedule(5 milliseconds, 5 milliseconds, self, Tick)
+    //    context.system.scheduler.schedule(5 milliseconds, 5 milliseconds, self, Tick)
   }
 
   override def receive: Receive = {
@@ -35,7 +35,9 @@ class MilestoneActor(implicit ec:ExecutionContext) extends Actor {
         }
       }
     case r: BenchmarkRequest =>
-      senders((sender, r.requestId, r.parameter.hashCode)) = 50 milliseconds
+      //      senders((sender, r.requestId, r.parameter.hashCode)) = 50 milliseconds
+      sender ! BenchmarkResponse(r.requestId, 20, Some(r.parameter.hashCode))
+
 
   }
 }
