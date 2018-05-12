@@ -26,6 +26,7 @@ object Settings {
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
     "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
+    "com.twitter" %% "finagle-http" % "18.5.0",
 //    "org.http4s" %% "http4s-server" %versions.http4sVersion,
 
     "com.github.finagle" %% "finch-core" % "0.19.0",

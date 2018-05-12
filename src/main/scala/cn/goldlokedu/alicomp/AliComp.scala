@@ -8,6 +8,9 @@ import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
 import com.typesafe.config.ConfigFactory
+import io.finch._
+import io.finch.syntax._
+import com.twitter.finagle
 
 trait AliComp extends Actors
   with AkkaInfrastructure
@@ -47,9 +50,11 @@ trait AliComp extends Actors
 
   def runAsConsumerAgentWithFinch(name: String): Unit = {
     logger.info(s"run as $name")
-    val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
 
-    //    val api:Endpoint
+//    val api: Endpoint[Int] = post(form("") :: param("")) {
+//      Ok(111)
+//    }
+//    finagle.Http.server.serve(s"$consumerHttpHost:$consumerHttpPort", api.toServiceAs[Text.Plain])
   }
 
 
