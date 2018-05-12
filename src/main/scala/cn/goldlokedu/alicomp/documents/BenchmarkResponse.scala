@@ -12,11 +12,12 @@ object BenchmarkResponse {
   def apply(message: DubboMessage): Try[BenchmarkResponse] = {
     Try {
       // 测试的结果是个32位整数值，但是dubbo用fastjson编码后得出的是一个字符串，例如 9900，结果是"1\n9900\n"字符串
-      val raw = message.body.drop(2).dropRight(1) // 头两个字节是"1\n",最后一个字节是"\n"
+      val raw = message.body.drop(2).dropRight(1) // 头两个字节是"1\n",最后一个字节是"\n",todo 如果是windows，那么是\n\r
       val status = message.status.toInt
       var result: Option[Int] = None
 
       if (status == 20) {
+        println(raw.head)
         if (raw.head == 45){
           // 负数
           val r = raw.drop(1).foldLeft(0) { (accum, it) =>
