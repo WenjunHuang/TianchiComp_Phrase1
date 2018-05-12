@@ -62,8 +62,8 @@ elif [[ "$1" == "provider-large" ]]; then
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20891 \
-       -DDUBBO_CONNECTION_COUNT=4 \
-       -DDUBBO_COUNT_PER_CONNECTION=50 \
+       -DDUBBO_CONNECTION_COUNT=1 \
+       -DDUBBO_COUNT_PER_CONNECTION=200 \
        ${AGENT_PATH}
 else
   echo "Unrecognized arguments, exit."
