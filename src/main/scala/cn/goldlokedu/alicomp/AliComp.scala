@@ -28,8 +28,8 @@ trait AliComp extends Actors
 
   def runAsConsumerAgent(name: String): Unit = {
     logger.info(s"run as $name")
-    //    val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
-    val actor = system.actorOf(Props(new MilestoneActorRouter), name)
+    val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
+    //    val actor = system.actorOf(Props(new MilestoneActorRouter), name)
     val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
