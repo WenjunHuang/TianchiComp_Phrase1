@@ -26,6 +26,8 @@ trait ConsumerConfiguration {
   def consumerHttpHost = consumerConfig.getString("http-host")
 
   def consumerHttpPort = consumerConfig.getInt("http-port")
+
+  def consumerAgentCount = consumerConfig.getInt("agent-count")
 }
 
 trait ProviderConfiguration {

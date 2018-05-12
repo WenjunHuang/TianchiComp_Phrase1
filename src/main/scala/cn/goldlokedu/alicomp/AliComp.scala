@@ -3,7 +3,7 @@ package cn.goldlokedu.alicomp
 import akka.actor.Props
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.actors.{ConsumerAgentActor, ConsumerAgentActorRouter}
 import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
@@ -28,7 +28,7 @@ trait AliComp extends Actors
 
   def runAsConsumerAgent(name: String): Unit = {
     logger.info(s"run as $name")
-    val actor = system.actorOf(Props(new ConsumerAgentActor), name)
+    val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
     val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }

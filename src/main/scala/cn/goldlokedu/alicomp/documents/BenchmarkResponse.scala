@@ -1,5 +1,7 @@
 package cn.goldlokedu.alicomp.documents
 
+import akka.http.scaladsl.common.EntityStreamingSupport
+
 import scala.util.Try
 
 case class BenchmarkResponse(requestId: Long,
