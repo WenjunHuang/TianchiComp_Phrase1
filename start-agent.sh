@@ -11,8 +11,8 @@ AGENT_PATH=/root/dists/mesh-agent.jar
 if [[ "$1" == "consumer" ]]; then
   echo "Starting consumer agent..."
   java -jar \
-       -Xms512M \
-       -Xmx512M \
+       -Xms1536M \
+       -Xmx1536M \
        -DRUN_TYPE=consumer \
        -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
        -DACTOR_SYSTEM_PORT=2551 \
@@ -38,8 +38,8 @@ elif [[ "$1" == "provider-small" ]]; then
 elif [[ "$1" == "provider-medium" ]]; then
   echo "Starting medium provider agent..."
   java -jar \
-       -Xms512M \
-       -Xmx512M \
+       -Xms1536M \
+       -Xmx1536M \
        -DRUN_TYPE=provider-medium \
        -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
        -DACTOR_SYSTEM_PORT=2553 \
@@ -53,8 +53,8 @@ elif [[ "$1" == "provider-medium" ]]; then
 elif [[ "$1" == "provider-large" ]]; then
   echo "Starting large provider agent..."
   java -jar \
-       -Xms512M \
-       -Xmx512M \
+       -Xms2560M \
+       -Xmx2560M \
        -DRUN_TYPE=provider-large \
        -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
        -DACTOR_SYSTEM_PORT=2554 \
