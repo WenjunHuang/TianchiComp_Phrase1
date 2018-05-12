@@ -24,7 +24,6 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
   import BenchmarkRequest._
 
   override def preStart(): Unit = {
-    self ! GetProviderAgents
     context.system.scheduler.scheduleOnce(5 seconds, self, GetProviderAgents)
   }
 
@@ -77,8 +76,8 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
         }
       }
       logger.info(s"total provider agents:$providerAgents")
-      etcdClient.shutdown()
       context become ready
+      etcdClient.shutdown()
     //      unstashAll()
     case Status.Failure(cause) =>
       logger.error(cause, s"error in connect to etcd")
