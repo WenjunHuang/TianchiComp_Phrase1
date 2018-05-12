@@ -24,6 +24,7 @@ if [[ "$1" == "consumer" ]]; then
        -Dcom.sun.management.jmxremote.local.only=false \
        -Dcom.sun.management.jmxremote.authenticate=false \
        -Dcom.sun.management.jmxremote.ssl=false \
+       -Djava.rmi.server.hostname=192.168.2.221 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-small" ]]; then
   echo "Starting small provider agent..."
