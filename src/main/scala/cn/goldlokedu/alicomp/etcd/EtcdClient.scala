@@ -31,4 +31,8 @@ class EtcdClient(host: String, port: Int)(implicit dispatcher: ExecutionContext)
       if (ret == 1) true else false
     }
   }
+
+  def shutdown() = {
+    client.shutdown()
+  }
 }

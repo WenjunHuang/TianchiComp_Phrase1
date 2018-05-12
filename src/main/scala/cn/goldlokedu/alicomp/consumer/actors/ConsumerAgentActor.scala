@@ -77,6 +77,7 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
         }
       }
       logger.info(s"total provider agents:$providerAgents")
+      etcdClient.shutdown()
       context become ready
     //      unstashAll()
     case Status.Failure(cause) =>

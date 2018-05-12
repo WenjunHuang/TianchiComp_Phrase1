@@ -42,6 +42,7 @@ class ProviderAgentActor(capType: CapacityType.Value,
       initialize()
     case PublishedToEtcd =>
       logger.info("address published to etcd")
+      etcdClient.shutdown()
       context become ready
     case Status.Failure(cause) =>
       logger.error(s"can not publish to etcd", cause)
