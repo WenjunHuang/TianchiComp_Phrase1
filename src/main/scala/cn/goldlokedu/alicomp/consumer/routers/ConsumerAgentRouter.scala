@@ -42,14 +42,4 @@ class ConsumerAgentRouter(agentRouter: ActorRef)(implicit ec: ExecutionContext,
         }
 
     }
-
-  // 直接返回给consumer
-  val milestone: Route =
-    (post &
-      formFields('interface.as[String], 'method.as[String], 'parameterTypesString.as[String], 'parameter.as[String])) {
-      (intr, method, pt, param) =>
-        complete(StatusCodes.OK -> param.hashCode.toString)
-    }
-
-
 }
