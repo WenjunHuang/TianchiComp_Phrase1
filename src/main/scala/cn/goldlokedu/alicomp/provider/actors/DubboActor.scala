@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 
 class DubboActor(dubboHost: String,
                  dubboPort: Int,
-                 threhold: Int)(implicit val logger: LoggingAdapter) extends Actor with Stash {
+                 threhold: Int)(implicit val logger: LoggingAdapter) extends Actor {
 
   import DubboActor._
   import Tcp._
@@ -54,15 +54,11 @@ class DubboActor(dubboHost: String,
            |my_host: ${local.getHostString},my_port: ${local.getPort}""".stripMargin)
       connection = Some(sender())
       connection.get ! Register(self)
-      unstashAll()
-
       // debug
       //      implicit val ec = context.dispatcher
       //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
 
       context become ready
-    case _ =>
-      stash()
   }
 
   def ready: Receive = {

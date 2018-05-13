@@ -23,8 +23,9 @@ class DubboRouterActor(capType: CapacityType.Value,
   import DubboRouterActor._
 
   var router = {
-    val routees = Vector.fill(dubboActorCount) {
-      val r = context.actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)))
+    val routees = (0 to dubboActorCount).map { index =>
+      val r = context
+        .actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)),s"dubbo_$index")
       context watch r
       ActorRefRoutee(r)
     }
