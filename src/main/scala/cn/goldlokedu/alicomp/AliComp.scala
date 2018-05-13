@@ -3,11 +3,14 @@ package cn.goldlokedu.alicomp
 import akka.actor.Props
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.actors.{ConsumerAgentActor, ConsumerAgentActorRouter}
 import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
-import cn.goldlokedu.alicomp.provider.actors.ProviderAgentActor
+import cn.goldlokedu.alicomp.provider.actors.DubboRouterActor
 import com.typesafe.config.ConfigFactory
+import akka.http.scaladsl.server.Directives._
+
+import scala.concurrent.duration._
 
 trait AliComp extends Actors
   with AkkaInfrastructure
@@ -28,16 +31,17 @@ trait AliComp extends Actors
 
   def runAsConsumerAgent(name: String): Unit = {
     logger.info(s"run as $name")
-    //    val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
+    //        val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
     //    val actor = system.actorOf(Props(new MilestoneActorRouter), name)
     val actor = system.actorOf(Props(new ConsumerAgentActor), name)
-    val consumerRoute: Route = new ConsumerAgentRouter(actor).routers
+    val router = new ConsumerAgentRouter(actor)
+    val consumerRoute: Route = router.invoke ~ router.routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
 
   def startProvider(cap: CapacityType.Value, name: String): Unit = {
     logger.info(s"run as $name")
-    system.actorOf(Props(new ProviderAgentActor(
+    system.actorOf(Props(new DubboRouterActor(
       cap,
       dubboProviderConnectionCount,
       dubboProviderMaxConcurrentCountPerConnection,
@@ -48,10 +52,10 @@ trait AliComp extends Actors
   def runAsConsumerAgentWithFinch(name: String): Unit = {
     logger.info(s"run as $name")
 
-//    val api: Endpoint[Int] = post(form("") :: param("")) {
-//      Ok(111)
-//    }
-//    finagle.Http.server.serve(s"$consumerHttpHost:$consumerHttpPort", api.toServiceAs[Text.Plain])
+    //    val api: Endpoint[Int] = post(form("") :: param("")) {
+    //      Ok(111)
+    //    }
+    //    finagle.Http.server.serve(s"$consumerHttpHost:$consumerHttpPort", api.toServiceAs[Text.Plain])
   }
 
 

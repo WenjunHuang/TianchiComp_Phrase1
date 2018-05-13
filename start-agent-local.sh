@@ -2,10 +2,10 @@
 
 
 # for local test
-ETCD_HOST=192.168.2.248
+ETCD_HOST=127.0.0.1
 ETCD_PORT=2379
-AGENT_HOST=192.168.2.44
-DUBBO_HOST=192.168.2.221
+AGENT_HOST=127.0.0.1
+DUBBO_HOST=127.0.0.1
 AGENT_PATH=/Users/xxzyjy/Sources/TianChi4thCompetition/target/scala-2.12/mesh-agent.jar
 
 if [[ "$1" == "consumer" ]]; then

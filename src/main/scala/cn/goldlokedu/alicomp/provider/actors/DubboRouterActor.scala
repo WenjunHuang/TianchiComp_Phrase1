@@ -11,16 +11,16 @@ import scala.concurrent.duration._
 
 import scala.concurrent.ExecutionContext
 
-class ProviderAgentActor(capType: CapacityType.Value,
-                         dubboActorCount: Int,
-                         threhold: Int,
-                         dubboHost: String,
-                         dubboPort: Int)(implicit etcdClient: EtcdClient,
+class DubboRouterActor(capType: CapacityType.Value,
+                       dubboActorCount: Int,
+                       threhold: Int,
+                       dubboHost: String,
+                       dubboPort: Int)(implicit etcdClient: EtcdClient,
                                          logger: LoggingAdapter) extends Actor {
 
   implicit val ec: ExecutionContext = context.system.dispatcher
 
-  import ProviderAgentActor._
+  import DubboRouterActor._
 
   var router = {
     val routees = Vector.fill(dubboActorCount) {
@@ -64,7 +64,7 @@ class ProviderAgentActor(capType: CapacityType.Value,
   }
 }
 
-object ProviderAgentActor {
+object DubboRouterActor {
 
   case object Init
 

@@ -7,7 +7,7 @@ import akka.event.LoggingAdapter
 import akka.io.Tcp.Event
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, ConsumerEncodeBenchmarkRequest, DubboMessageBuilder}
+import cn.goldlokedu.alicomp.documents._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -57,8 +57,8 @@ class DubboActor(dubboHost: String,
       unstashAll()
 
       // debug
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      //      implicit val ec = context.dispatcher
+      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
 
       context become ready
     case _ =>
@@ -67,7 +67,7 @@ class DubboActor(dubboHost: String,
 
   def ready: Receive = {
     case PrintPayload =>
-      println(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
+      logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
 
     case msg: BenchmarkRequest =>
       trySendRequestToDubbo(sender, msg.requestId, msg)
@@ -79,6 +79,8 @@ class DubboActor(dubboHost: String,
       trySendNextPending()
     case Received(data) =>
       val (newBuilder, messages) = dubboMessageBuilder.feed(data)
+      if (messages.size > 1)
+        logger.info(s"get ${messages.size} replies")
       dubboMessageBuilder = newBuilder
 
       // 有可能一次读取就获取了多个回复

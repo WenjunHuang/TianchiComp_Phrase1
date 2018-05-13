@@ -1,7 +1,5 @@
 package cn.goldlokedu.alicomp.documents
 
-import akka.http.scaladsl.common.EntityStreamingSupport
-
 import scala.util.Try
 
 case class BenchmarkResponse(requestId: Long,
@@ -17,7 +15,6 @@ object BenchmarkResponse {
       var result: Option[Int] = None
 
       if (status == 20) {
-        println(raw.head)
         if (raw.head == 45){
           // 负数
           val r = raw.drop(1).foldLeft(0) { (accum, it) =>

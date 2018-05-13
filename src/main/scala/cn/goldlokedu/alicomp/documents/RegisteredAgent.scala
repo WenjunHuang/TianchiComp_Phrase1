@@ -1,10 +1,9 @@
 package cn.goldlokedu.alicomp.documents
 
-import akka.actor.ActorPath
 import cn.goldlokedu.alicomp.documents.CapacityType.CapacityType
 import cn.goldlokedu.alicomp.util.json.EnumJsonConverter
-import spray.json.RootJsonFormat
 import cn.goldlokedu.alicomp.util.json.ServiceProtocol._
+import spray.json.RootJsonFormat
 
 object CapacityType extends Enumeration {
   type CapacityType = Value

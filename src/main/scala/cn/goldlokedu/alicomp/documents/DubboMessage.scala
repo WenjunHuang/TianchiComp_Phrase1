@@ -1,5 +1,7 @@
 package cn.goldlokedu.alicomp.documents
 
+import java.nio.ByteOrder
+
 import akka.util.ByteString
 
 case class DubboMessage(isRequest: Boolean,

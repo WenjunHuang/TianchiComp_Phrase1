@@ -27,7 +27,9 @@ object Settings {
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
     "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
 //    "com.twitter" %% "finagle-http" % "18.5.0",
-//    "org.http4s" %% "http4s-server" %versions.http4sVersion,
+    "org.http4s" %% "http4s-server" %versions.http4sVersion,
+    "org.http4s" %% "http4s-dsl" % versions.http4sVersion,
+    "org.http4s" %% "http4s-blaze-server" % versions.http4sVersion,
 
 //    "com.github.finagle" %% "finch-core" % "0.19.0",
 
@@ -37,6 +39,7 @@ object Settings {
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % versions.log4j2Version,
     "org.apache.logging.log4j" % "log4j-api" % versions.log4j2Version,
     "org.apache.logging.log4j" % "log4j-core" % versions.log4j2Version,
+    "org.apache.commons" % "commons-lang3" % "3.7",
 
     // test
     "com.typesafe.akka" %% "akka-multi-node-testkit" % versions.akkaVersion % Test,
