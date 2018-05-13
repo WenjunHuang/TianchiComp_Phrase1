@@ -39,11 +39,11 @@ trait AliComp extends Actors
     val router = new ConsumerAgentRouter(actor)
 
     // Vertex
-    val vertx = Vertx.vertx()
-    vertx.deployVerticle(new HttpVerticle(actor,consumerHttpHost,consumerHttpPort))
+//    val vertx = Vertx.vertx()
+//    vertx.deployVerticle(new HttpVerticle(actor,consumerHttpHost,consumerHttpPort))
     // akka http
-//    val consumerRoute: Route = router.invoke ~ router.routers
-//    Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
+    val consumerRoute: Route = router.invoke ~ router.routers
+    Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
 
   def startProvider(cap: CapacityType.Value, name: String): Unit = {
