@@ -16,7 +16,7 @@ object Settings {
     val log4j2Version = "2.9.0"
     val slf4jVersion = "1.7.25"
     val etcdClientVersion = "0.1.4"
-    val http4sVersion = "0.18.11"
+    val vertxVersion = "3.5.1"
   }
 
   val dependencies = Def.setting(Seq(
@@ -26,12 +26,10 @@ object Settings {
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
     "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
-//    "com.twitter" %% "finagle-http" % "18.5.0",
-    "org.http4s" %% "http4s-server" %versions.http4sVersion,
-    "org.http4s" %% "http4s-dsl" % versions.http4sVersion,
-    "org.http4s" %% "http4s-blaze-server" % versions.http4sVersion,
 
-//    "com.github.finagle" %% "finch-core" % "0.19.0",
+    // vertx
+    "io.vertx" %% "vertx-web-scala" % versions.vertxVersion,
+
 
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
@@ -46,7 +44,7 @@ object Settings {
     "com.typesafe.akka" %% "akka-testkit" % versions.akkaVersion % Test,
     "com.typesafe.akka" %% "akka-stream-testkit" % versions.akkaVersion % Test,
     "com.typesafe.akka" %% "akka-http-testkit" % versions.akkaHttpVersion % Test,
-    "org.scalatest" %% "scalatest" % versions.scalatestVersion
+    "org.scalatest" %% "scalatest" % versions.scalatestVersion % Test
   ))
 
 

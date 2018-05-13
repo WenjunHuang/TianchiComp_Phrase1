@@ -19,6 +19,7 @@ assemblyMergeStrategy in assembly := {
   case "consumer.conf" ⇒ MergeStrategy.concat
   case "reference.conf" ⇒ MergeStrategy.concat
   case "META-INF/io.netty.versions.properties" => MergeStrategy.concat
+  case "codegen.json" => MergeStrategy.concat
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
