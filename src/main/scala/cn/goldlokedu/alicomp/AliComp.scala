@@ -9,6 +9,8 @@ import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.DubboRouterActor
 import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.server.Directives._
+import cn.goldlokedu.alicomp.consumer.vertx.HttpVerticle
+import io.vertx.scala.core.Vertx
 
 import scala.concurrent.duration._
 
@@ -35,6 +37,11 @@ trait AliComp extends Actors
     //    val actor = system.actorOf(Props(new MilestoneActorRouter), name)
     val actor = system.actorOf(Props(new ConsumerAgentActor), name)
     val router = new ConsumerAgentRouter(actor)
+
+    // Vertex
+//    val vertx = Vertx.vertx()
+//    vertx.deployVerticle(new HttpVerticle(actor,consumerHttpHost,consumerHttpPort))
+    // akka http
     val consumerRoute: Route = router.invoke ~ router.routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
@@ -47,15 +54,6 @@ trait AliComp extends Actors
       dubboProviderMaxConcurrentCountPerConnection,
       dubboProviderHost,
       dubboProviderPort)), name)
-  }
-
-  def runAsConsumerAgentWithFinch(name: String): Unit = {
-    logger.info(s"run as $name")
-
-    //    val api: Endpoint[Int] = post(form("") :: param("")) {
-    //      Ok(111)
-    //    }
-    //    finagle.Http.server.serve(s"$consumerHttpHost:$consumerHttpPort", api.toServiceAs[Text.Plain])
   }
 
 
