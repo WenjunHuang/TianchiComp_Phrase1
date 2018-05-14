@@ -1,12 +1,10 @@
 package cn.goldlokedu.alicomp.etcd
 
 import cn.goldlokedu.alicomp.documents.RegisteredAgent
-import org.etcd4s.pb.mvccpb.KeyValue
-import spray.json._
-import org.etcd4s.{Etcd4sClient, Etcd4sClientConfig}
-import org.etcd4s.implicits._
 import org.etcd4s.formats.Formats._
-import cn.goldlokedu.alicomp.util.json.ServiceProtocol._
+import org.etcd4s.pb.mvccpb.KeyValue
+import org.etcd4s.{Etcd4sClient, Etcd4sClientConfig}
+import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 

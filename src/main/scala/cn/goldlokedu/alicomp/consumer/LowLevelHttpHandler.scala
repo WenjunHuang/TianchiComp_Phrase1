@@ -48,6 +48,6 @@ class LowLevelHttpHandler(consumerHttpHost: String,
 
   lazy val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
   val bindingFuture: Future[Http.ServerBinding] = serverSource.to(Sink.foreach { connection =>
-    connection.handleWithAsyncHandler(requestHandler)
+    connection.handleWithAsyncHandler(requestHandler,1000)
   }).run()
 }
