@@ -79,9 +79,9 @@ class DubboActor(dubboHost: String,
       trySendNextPending()
     case Received(data) =>
       val (newBuilder, messages) = dubboMessageBuilder.feed(data)
-      if (messages.size > 1)
-        logger.info(s"get ${messages.size} replies")
-      dubboMessageBuilder = newBuilder
+//      if (messages.size > 1)
+//        logger.info(s"get ${messages.size} replies")
+//      dubboMessageBuilder = newBuilder
 
       // 有可能一次读取就获取了多个回复
       messages.foreach { msg =>
