@@ -2,13 +2,20 @@ package cn.goldlokedu.alicomp
 
 import akka.actor.Props
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unmarshaller}
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.stream.scaladsl.Sink
+import cn.goldlokedu.alicomp.consumer.LowLevelHttpHandler
 import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
 import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.DubboRouterActor
 import com.typesafe.config.ConfigFactory
+
+import scala.concurrent.Future
 
 trait AliComp extends Actors
   with AkkaInfrastructure
@@ -28,14 +35,21 @@ trait AliComp extends Actors
   }
 
   def runAsConsumerAgent(name: String): Unit = {
+    implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
     logger.info(s"run as $name")
-    //        val actor = system.actorOf(Props(new ConsumerAgentActorRouter(consumerAgentCount)), name)
-    //    val actor = system.actorOf(Props(new MilestoneActorRouter), name)
     val actor = system.actorOf(Props(new ConsumerAgentActor), name)
     val router = new ConsumerAgentRouter(actor)
 
     val consumerRoute: Route = router.invoke ~ router.routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
+  }
+
+  def runAsLowLevelConsumerAgent(name: String) = {
+    logger.info(s"run as lowlevel $name")
+
+    implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
+    val actor = system.actorOf(Props(new ConsumerAgentActor), name)
+    val handler = new LowLevelHttpHandler(consumerHttpHost,consumerHttpPort,actor)
   }
 
   def startProvider(cap: CapacityType.Value, name: String): Unit = {
@@ -53,7 +67,7 @@ trait AliComp extends Actors
     case name@"provider-small" => startProvider(CapacityType.S, name)
     case name@"provider-medium" => startProvider(CapacityType.M, name)
     case name@"provider-large" => startProvider(CapacityType.L, name)
-    case name@"consumer" => runAsConsumerAgent(name)
+    case name@"consumer" => runAsLowLevelConsumerAgent(name)//runAsConsumerAgent(name)
     case _ =>
       throw new IllegalArgumentException("don't known which type i should run as.(provider/consumer)")
   }
