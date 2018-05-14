@@ -16,7 +16,6 @@ object Settings {
     val log4j2Version = "2.9.0"
     val slf4jVersion = "1.7.25"
     val etcdClientVersion = "0.1.4"
-    val vertxVersion = "3.5.1"
   }
 
   val dependencies = Def.setting(Seq(
@@ -26,11 +25,6 @@ object Settings {
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
     "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
-
-    // vertx
-    "io.vertx" %% "vertx-web-scala" % versions.vertxVersion,
-
-
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
     "org.slf4j" % "slf4j-api" % versions.slf4jVersion,

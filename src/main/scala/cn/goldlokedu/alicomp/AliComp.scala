@@ -2,17 +2,13 @@ package cn.goldlokedu.alicomp
 
 import akka.actor.Props
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cn.goldlokedu.alicomp.consumer.actors.{ConsumerAgentActor, ConsumerAgentActorRouter}
+import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
 import cn.goldlokedu.alicomp.consumer.routers.ConsumerAgentRouter
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.DubboRouterActor
 import com.typesafe.config.ConfigFactory
-import akka.http.scaladsl.server.Directives._
-import cn.goldlokedu.alicomp.consumer.vertx.HttpVerticle
-import io.vertx.scala.core.Vertx
-
-import scala.concurrent.duration._
 
 trait AliComp extends Actors
   with AkkaInfrastructure
@@ -38,10 +34,6 @@ trait AliComp extends Actors
     val actor = system.actorOf(Props(new ConsumerAgentActor), name)
     val router = new ConsumerAgentRouter(actor)
 
-    // Vertex
-//    val vertx = Vertx.vertx()
-//    vertx.deployVerticle(new HttpVerticle(actor,consumerHttpHost,consumerHttpPort))
-    // akka http
     val consumerRoute: Route = router.invoke ~ router.routers
     Http().bindAndHandle(consumerRoute, consumerHttpHost, consumerHttpPort)
   }
