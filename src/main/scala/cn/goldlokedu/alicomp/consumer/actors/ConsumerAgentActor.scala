@@ -3,7 +3,7 @@ package cn.goldlokedu.alicomp.consumer.actors
 import akka.actor.{Actor, ActorRef, Props, Status}
 import akka.event.LoggingAdapter
 import akka.util.Timeout
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType}
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, CapacityType}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 
 import scala.collection.mutable
@@ -30,6 +30,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
       selectProviderAgent match {
         case Some(actorRef) =>
           actorRef forward req
+        //          actorRef.tell(req, sender)
         //          actorRef forward toConsumerRequest(req)
         //          actorRef.tell(req, sender)
         case None =>

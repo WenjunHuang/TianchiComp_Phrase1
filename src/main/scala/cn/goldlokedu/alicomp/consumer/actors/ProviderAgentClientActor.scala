@@ -9,6 +9,7 @@ import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
 
 import scala.collection.mutable
+import scala.util.Success
 
 
 class ProviderAgentClientActor(providerName: String,
@@ -52,6 +53,7 @@ class ProviderAgentClientActor(providerName: String,
           case _ =>
         }
       }
+      log.info("consumer Received")
 
     case msg: BenchmarkRequest =>
       // dubbo 结果
@@ -60,25 +62,26 @@ class ProviderAgentClientActor(providerName: String,
         sendPendingRequests()
       }
     case DoneWrite =>
+      log.info("consumer done write")
       isWriting = false
       sendPendingRequests()
   }
 
   def sendPendingRequests() = {
     val msgs = pendingRequests.dequeueAll(_ => true)
-    val builder = ByteString.newBuilder
-    msgs.foreach { msg =>
-      builder.append(msg._2)
-      workingRequests(msg._2.requestId) = msg._1
-    }
+    if (msgs.nonEmpty) {
+      val builder = ByteString.newBuilder
+      msgs.foreach { msg =>
+        builder.append(msg._2)
+        workingRequests(msg._2.requestId) = msg._1
+      }
 
-    isWriting = true
-    connection.get ! Write(builder.result, DoneWrite)
+      connection.get ! Write(builder.result, DoneWrite)
+      isWriting = true
+    }
   }
 }
 
 object ProviderAgentClientActor {
-
   case object DoneWrite extends Event
-
 }

@@ -10,7 +10,7 @@ object Settings {
 
   object versions {
     val akkaVersion = "2.5.12"
-    val akkaHttpVersion = "10.1.0"
+    val akkaHttpVersion = "10.1.1"
     val twitterChillAkka = "0.9.2"
     val scalatestVersion = "3.0.3"
     val log4j2Version = "2.9.0"
