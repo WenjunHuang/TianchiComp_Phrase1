@@ -3,12 +3,11 @@ package cn.goldlokedu.alicomp
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
 import cn.goldlokedu.alicomp.etcd.EtcdClient
-import scala.concurrent.duration._
 
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 trait AkkaInfrastructure {
   this: Configuration with SystemConfiguration ⇒
@@ -16,7 +15,9 @@ trait AkkaInfrastructure {
   implicit lazy val system: ActorSystem = ActorSystem("AliComp", config)
   implicit lazy val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit lazy val logger: LoggingAdapter = system.log
-  implicit lazy val etcdClient: EtcdClient = new EtcdClient(etcdHost, etcdPort)
+
+  implicit def etcdClient: EtcdClient = new EtcdClient(etcdHost, etcdPort)
+
   implicit lazy val timeout = Timeout(5 seconds)
 
   sys.addShutdownHook(system.terminate())

@@ -15,9 +15,11 @@ import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 
-class LowLevelHttpHandler(consumerHttpHost: String,
-                          consumerHttpPort: Int,
-                          agentRouter: ActorRef)(implicit system: ActorSystem, ec: ExecutionContext, materializer: ActorMaterializer, timeout: Timeout) {
+import scala.util.{Success, Try}
+
+class ConsumerAgentHttpServer(consumerHttpHost: String,
+                              consumerHttpPort: Int,
+                              agentRouter: ActorRef)(implicit system: ActorSystem, ec: ExecutionContext, materializer: ActorMaterializer, timeout: Timeout) {
   lazy val requestHandler: HttpRequest => Future[HttpResponse] = {
     case HttpRequest(POST, _, _, entity, _) =>
       PredefinedFromEntityUnmarshallers.defaultUrlEncodedFormDataUnmarshaller(entity)
@@ -33,21 +35,21 @@ class LowLevelHttpHandler(consumerHttpHost: String,
             method = method,
             parameterTypeString = pts,
             parameter = param))
-            .mapTo[BenchmarkResponse]
-            .map { response =>
-              response.result match {
-                case Some(result) =>
-                  HttpResponse(200, entity = String.valueOf(response.result.get))
-                case None =>
-                  HttpResponse(500)
-              }
+            .mapTo[Try[BenchmarkResponse]]
+            .map {
+              case Success(result) if result.status == 20 =>
+                HttpResponse(200, entity = String.valueOf(result.result.get))
+              case _ =>
+                HttpResponse(500)
             }
         }
 
   }
 
-  lazy val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
-  val bindingFuture: Future[Http.ServerBinding] = serverSource.to(Sink.foreach { connection =>
-    connection.handleWithAsyncHandler(requestHandler,4)
-  }).run()
+  def run() = {
+    val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
+    serverSource.to(Sink.foreach { connection =>
+      connection.handleWithAsyncHandler(requestHandler, 4)
+    }).run()
+  }
 }

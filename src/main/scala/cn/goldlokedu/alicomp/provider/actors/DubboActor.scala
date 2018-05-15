@@ -10,27 +10,26 @@ import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents._
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class DubboActor(dubboHost: String,
                  dubboPort: Int,
-                 threhold: Int)(implicit val logger: LoggingAdapter) extends Actor {
+                 threhold: Int)(implicit logger: LoggingAdapter, ec: ExecutionContext) extends Actor {
 
   import DubboActor._
   import Tcp._
-  import context.system
 
-  implicit val ec = context.dispatcher
   // Akka IO
   var connection: Option[ActorRef] = None
 
-  var currentWritingRequest: Option[(ActorRef, Long, ByteString)] = None
+  var currentWritingCount = 0
 
   // 当前正在执行的请求
   val runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
 
   // 未发送的请求
-  val pendingRequests: mutable.Queue[(ActorRef, Long, ByteString)] = mutable.Queue.empty
+  val pendingRequests: mutable.Queue[(ActorRef, DubboMessage)] = mutable.Queue.empty
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -55,8 +54,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-      //      implicit val ec = context.dispatcher
-      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      implicit val ec = context.dispatcher
+      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
 
       context become ready
   }
@@ -64,34 +63,29 @@ class DubboActor(dubboHost: String,
   def ready: Receive = {
     case PrintPayload =>
       logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
-
-    case msg: BenchmarkRequest =>
-      trySendRequestToDubbo(sender, msg.requestId, msg)
-    case ConsumerEncodeBenchmarkRequest(requestId, msg) =>
-      trySendRequestToDubbo(sender, requestId, msg)
+    case msgs: Seq[DubboMessage] =>
+      trySendRequestToDubbo(sender, msgs)
     case DoneWrite =>
-      //请求的数据已经完全发送给dubbo了，接着发下一个（如果还有的话）
-      currentWritingRequest = None
+      currentWritingCount -= 1
       trySendNextPending()
     case Received(data) =>
       val (newBuilder, messages) = dubboMessageBuilder.feed(data)
-//      if (messages.size > 1)
-//        logger.info(s"get ${messages.size} replies")
-//      dubboMessageBuilder = newBuilder
+      dubboMessageBuilder = newBuilder
 
       // 有可能一次读取就获取了多个回复
       messages.foreach { msg =>
         if (msg.isResponse) {
           runningRequests.remove(msg.requestId) match {
             case Some(replyTo) =>
-              replyTo ! BenchmarkResponse(msg).get
-              trySendNextPending()
+              replyTo ! msg
             case None =>
               // 收到一个未知requestId的回复?这可能是个bug
               logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
           }
         }
       }
+      if (messages.nonEmpty)
+        trySendNextPending()
 
     case _: ConnectionClosed =>
       logger.info("connection closed by dubbo,try reconnect")
@@ -100,28 +94,43 @@ class DubboActor(dubboHost: String,
   }
 
   private def connectToDubbo(): Unit = {
+    import context.system
     IO(Tcp) ! Connect(new InetSocketAddress(dubboHost, dubboPort))
   }
 
   private def trySendNextPending(): Unit = {
     (isBelowThrehold, hasAnyPending, notWriting) match {
       case (true, true, true) =>
-        pendingRequests.dequeueFirst(_ => true) match {
-          case Some((replyTo, requestId, request)) =>
-            sendRequestToDubbo(replyTo, requestId, request)
-          case None =>
-        }
+        var a = awailableCount
+        val send = pendingRequests.dequeueAll(_ => {
+          a -= 1;
+          a >= 0
+        })
+        sendRequestToDubbo(send)
       case _ =>
     }
   }
 
-  private def trySendRequestToDubbo(replyTo: ActorRef, requestId: Long, request: ByteString): Unit = {
+  private def trySendRequestToDubbo(replyTo: ActorRef, msgs: Seq[DubboMessage]): Unit = {
     (isBelowThrehold, noPending, notWriting) match {
       case (true, true, true) =>
-        sendRequestToDubbo(replyTo, requestId, request)
+        val a = awailableCount
+        val (d, l) = msgs.splitAt(a)
+        sendRequestToDubbo(d.map(replyTo -> _))
+
+        l.foreach { msg =>
+          pendingRequests.enqueue(replyTo -> msg)
+        }
       case _ =>
-        pendingRequests.enqueue((replyTo, requestId, request))
+        msgs.foreach { msg =>
+          pendingRequests.enqueue(replyTo -> msg)
+        }
     }
+  }
+
+  @inline
+  private def awailableCount = {
+    threhold - runningRequests.size
   }
 
   @inline
@@ -131,7 +140,7 @@ class DubboActor(dubboHost: String,
 
   @inline
   private def isWriting = {
-    currentWritingRequest.nonEmpty
+    currentWritingCount != 0
   }
 
   @inline
@@ -155,14 +164,17 @@ class DubboActor(dubboHost: String,
     runningRequests.size < threhold
   }
 
-  private def sendRequestToDubbo(replyTo: ActorRef, requestId: Long, request: ByteString) = {
-    currentWritingRequest = Some((replyTo, requestId, request))
-    runningRequests += requestId -> replyTo
-    connection.get ! Write(request, DoneWrite)
+  private def sendRequestToDubbo(msgs: Seq[(ActorRef, DubboMessage)]) = {
+    val toSend = msgs.map { msg =>
+      currentWritingCount += 1
+      runningRequests += msg._2.requestId -> msg._1
+      Write(msg._2.toByteString, DoneWrite)
+    }
+    connection.get ! CompoundWrite(toSend.head, WriteCommand(toSend.tail))
   }
 
-  private def pendRequest(replyTo: ActorRef, requestId: Long, request: ByteString) = {
-    pendingRequests.enqueue((replyTo, requestId, request))
+  private def pendRequest(replyTo: ActorRef, msg: DubboMessage) = {
+    pendingRequests.enqueue(replyTo -> msg)
   }
 
 }

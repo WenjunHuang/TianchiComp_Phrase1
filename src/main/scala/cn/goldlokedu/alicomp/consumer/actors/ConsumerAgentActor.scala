@@ -1,27 +1,23 @@
 package cn.goldlokedu.alicomp.consumer.actors
 
-import akka.actor.{Actor, ActorRef, Stash, Status, Terminated}
+import akka.actor.{Actor, ActorRef, Props, Status}
 import akka.event.LoggingAdapter
 import akka.util.Timeout
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType, RegisteredAgent}
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, CapacityType}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
-import akka.pattern._
-
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.util.Random
 
-class ConsumerAgentActor(implicit ec: ExecutionContext,
-                         to: Timeout,
-                         logger: LoggingAdapter,
-                         etcdClient: EtcdClient) extends Actor {
+class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContext,
+                                                    to: Timeout,
+                                                    logger: LoggingAdapter) extends Actor {
   //with Stash {
   var providerAgents: mutable.Map[CapacityType.Value, ActorRef] = mutable.Map.empty
 
   import ConsumerAgentActor._
-  import BenchmarkRequest._
 
   override def preStart(): Unit = {
     context.system.scheduler.scheduleOnce(5 seconds, self, GetProviderAgents)
@@ -34,7 +30,7 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
       selectProviderAgent match {
         case Some(actorRef) =>
           actorRef forward req
-//          actorRef forward toConsumerRequest(req)
+        //          actorRef forward toConsumerRequest(req)
         //          actorRef.tell(req, sender)
         case None =>
           sender ! Status.Failure(new Exception("not provider"))
@@ -43,37 +39,37 @@ class ConsumerAgentActor(implicit ec: ExecutionContext,
       tryGetProviderAgents
     case ProviderTerminated(cap) =>
       providerAgents.remove(cap)
+
   }
 
   def tryGetProviderAgents = {
     logger.info("begin try get provider agents")
-    etcdClient.providers()
-      .flatMap { ras =>
+    val etcd = etcdClient
+    etcd.providers()
+      .map { ras =>
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
-        Future.traverse(rest.map { agent =>
-          context.system.actorSelection(agent.address).resolveOne
-            .map { ar =>
-              (agent.cap, Option(ar))
-            }.recover {
-            case anyError =>
-              logger.error(anyError, s"error when try to connect provider")
-              (agent.cap, None)
-          }
-        })(identity)
-      }.mapTo[Seq[(CapacityType.Value, Option[ActorRef])]] pipeTo self
-    context become getProviderAgents
+        rest.foreach { agent =>
+          val client = context.actorOf(Props(new ProviderAgentClientActor(agent.agentName, agent.host, agent.port)))
+          providerAgents(agent.cap) = client
+        }
+      }
+      .onComplete {
+        case _ =>
+          etcd.shutdown()
+      }
   }
 
   def getProviderAgents: Receive = {
     case ra: Seq[(CapacityType.Value, Option[ActorRef])] =>
       logger.info(s"get new provider agents: $ra")
-      ra.foreach { r =>
-        r._2 match {
-          case Some(actorRef) =>
-            providerAgents(r._1) = actorRef
-            context.watchWith(actorRef, ProviderTerminated(r._1))
-          case None =>
-        }
+      ra.foreach {
+        r =>
+          r._2 match {
+            case Some(actorRef) =>
+              providerAgents(r._1) = actorRef
+              context.watchWith(actorRef, ProviderTerminated(r._1))
+            case None =>
+          }
       }
       logger.info(s"total provider agents:$providerAgents")
       context become ready

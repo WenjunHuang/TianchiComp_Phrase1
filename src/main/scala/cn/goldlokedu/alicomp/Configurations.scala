@@ -34,6 +34,8 @@ trait ProviderConfiguration {
   this: Configuration =>
   private def providerConfig = config.getConfig("provider")
 
+  def providerHost = providerConfig.getString("host")
+
   def dubboProviderHost = providerConfig.getString("dubbo-provider-host")
 
   def dubboProviderPort = providerConfig.getInt("dubbo-provider-port")

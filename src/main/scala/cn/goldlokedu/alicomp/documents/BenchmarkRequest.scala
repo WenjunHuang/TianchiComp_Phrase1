@@ -22,27 +22,37 @@ object BenchmarkRequest {
     val builder = ByteString.newBuilder
 
     createDubboRequestHeader(builder, obj.requestId)
-    val body = createDubboRequestBody(obj)
+    val body = createDubboRequestBody(obj.interface, obj.method, obj.parameterTypeString, obj.parameter)
 
     val size = body.size
     builder.putInt(size)
-    builder.result() ++ body
+    builder.append(body)
+    builder.result()
+  }
+
+  def makeDubboRequest(requestId: Long,
+                       interface: String,
+                       method: String,
+                       parameterTypeString: String,
+                       parameter: String): ByteString = {
+    val builder = ByteString.newBuilder
+    createDubboRequestHeader(builder, requestId)
+    val body = createDubboRequestBody(interface, method, parameterTypeString, parameter)
+
+    builder.putInt(body.size)
+    builder.append(body)
+    builder.result()
   }
 
   @inline
-  implicit def toConsumerRequest(obj:BenchmarkRequest):ConsumerEncodeBenchmarkRequest = {
-    ConsumerEncodeBenchmarkRequest(obj.requestId,toDubboRequest(obj))
-  }
-
-  @inline
-  private def createDubboRequestBody(obj: BenchmarkRequest): ByteString = {
+  private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String): ByteString = {
     val bodyBuilder = ByteString.newBuilder
     val body = Seq(DubboVersion, // dubbo version
-      s""""${obj.interface}"""", // service name
+      s""""${interface}"""", // service name
       RequestVersion, // service version
-      s""""${obj.method}"""", // method name
-      s""""${obj.parameterTypeString}"""", // method parameter type
-      s""""${obj.parameter}"""", // method arguments
+      s""""${method}"""", // method name
+      s""""${parameterTypeString}"""", // method parameter type
+      s""""${parameter}"""", // method arguments
       s"{}"
     ).mkString("\n").getBytes("UTF-8")
     bodyBuilder.putBytes(body).result()
