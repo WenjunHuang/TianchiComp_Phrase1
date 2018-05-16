@@ -14,9 +14,6 @@ if [[ "$1" == "consumer" ]]; then
        -server \
        -Xms1536M \
        -Xmx1536M \
-       -XX:+UseNUMA \
-       -XX:+UseCondCardMark \
-       -XX:-UseBiasedLocking \
        -DRUN_TYPE=consumer \
        -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
        -DACTOR_SYSTEM_PORT=2551 \
@@ -29,6 +26,7 @@ elif [[ "$1" == "provider-small" ]]; then
   java -jar \
        -Xms512M \
        -Xmx512M \
+       -DRUN_TYPE=provider-small \
        -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
        -DACTOR_SYSTEM_PORT=2552 \
        -DETCD_HOST=${ETCD_HOST} \
