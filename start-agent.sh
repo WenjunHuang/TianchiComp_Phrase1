@@ -34,7 +34,7 @@ elif [[ "$1" == "provider-small" ]]; then
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20889 \
        -DDUBBO_CONNECTION_COUNT=2 \
-       -DDUBBO_COUNT_PER_CONNECTION=100 \
+       -DDUBBO_COUNT_PER_CONNECTION=10 \
        -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-medium" ]]; then
@@ -50,7 +50,7 @@ elif [[ "$1" == "provider-medium" ]]; then
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20890 \
        -DDUBBO_CONNECTION_COUNT=2 \
-       -DDUBBO_COUNT_PER_CONNECTION=100 \
+       -DDUBBO_COUNT_PER_CONNECTION=20 \
        -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-large" ]]; then
@@ -66,7 +66,7 @@ elif [[ "$1" == "provider-large" ]]; then
        -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
        -DDUBBO_PROVIDER_PORT=20891 \
        -DDUBBO_CONNECTION_COUNT=2 \
-       -DDUBBO_COUNT_PER_CONNECTION=100 \
+       -DDUBBO_COUNT_PER_CONNECTION=30 \
        -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
        ${AGENT_PATH}
 else
