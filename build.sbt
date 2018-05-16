@@ -4,6 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.5"
 libraryDependencies ++= Settings.dependencies.value
+scalacOptions in Compile ++= Settings.scalacOptions
 
 // 集成测试目录
 unmanagedSourceDirectories in Compile ++= Seq(baseDirectory(_ / "src" / "integration_test" / "scala").value)

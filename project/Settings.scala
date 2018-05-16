@@ -5,7 +5,8 @@ object Settings {
     "-language:_",
     "-unchecked",
     "-deprecation",
-    "feature"
+    "feature",
+    "-opt:_"
   )
 
   object versions {
@@ -24,21 +25,21 @@ object Settings {
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
-    "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
+//    "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
     "org.slf4j" % "slf4j-api" % versions.slf4jVersion,
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % versions.log4j2Version,
     "org.apache.logging.log4j" % "log4j-api" % versions.log4j2Version,
-    "org.apache.logging.log4j" % "log4j-core" % versions.log4j2Version,
-    "org.apache.commons" % "commons-lang3" % "3.7",
+    "org.apache.logging.log4j" % "log4j-core" % versions.log4j2Version
+//    "org.apache.commons" % "commons-lang3" % "3.7",
 
     // test
-    "com.typesafe.akka" %% "akka-multi-node-testkit" % versions.akkaVersion % Test,
-    "com.typesafe.akka" %% "akka-testkit" % versions.akkaVersion % Test,
-    "com.typesafe.akka" %% "akka-stream-testkit" % versions.akkaVersion % Test,
-    "com.typesafe.akka" %% "akka-http-testkit" % versions.akkaHttpVersion % Test,
-    "org.scalatest" %% "scalatest" % versions.scalatestVersion % Test
+//    "com.typesafe.akka" %% "akka-multi-node-testkit" % versions.akkaVersion % Test,
+//    "com.typesafe.akka" %% "akka-testkit" % versions.akkaVersion % Test,
+//    "com.typesafe.akka" %% "akka-stream-testkit" % versions.akkaVersion % Test,
+//    "com.typesafe.akka" %% "akka-http-testkit" % versions.akkaHttpVersion % Test,
+//    "org.scalatest" %% "scalatest" % versions.scalatestVersion % Test
   ))
 
 

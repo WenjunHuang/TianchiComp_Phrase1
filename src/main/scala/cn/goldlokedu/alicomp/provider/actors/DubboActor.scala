@@ -9,6 +9,7 @@ import akka.io.{IO, Tcp}
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents._
 
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -26,10 +27,10 @@ class DubboActor(dubboHost: String,
   var isWriting = false
 
   // 当前正在执行的请求
-  val runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
+  var runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
 
   // 未发送的请求
-  val pendingRequests: mutable.Queue[(ActorRef, DubboMessage)] = mutable.Queue.empty
+  var pendingRequests: Queue[(ActorRef, DubboMessage)] = Queue.empty
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -101,9 +102,8 @@ class DubboActor(dubboHost: String,
   private def trySendNextPending(): Unit = {
     (isBelowThrehold, hasAnyPending, notWriting) match {
       case (true, true, true) =>
-        val a = awailableCount
-        val send = pendingRequests.take(a)
-        pendingRequests.drop(a)
+        val (send, rest) = pendingRequests.splitAt(awailableCount)
+        pendingRequests = rest
         sendRequestToDubbo(send)
       case _ =>
     }
@@ -115,14 +115,9 @@ class DubboActor(dubboHost: String,
         val a = awailableCount
         val (d, l) = msgs.splitAt(a)
         sendRequestToDubbo(d.map(replyTo -> _))
-
-        l.foreach { msg =>
-          pendingRequests.enqueue(replyTo -> msg)
-        }
+        pendingRequests ++= l.map(replyTo -> _)
       case _ =>
-        msgs.foreach { msg =>
-          pendingRequests.enqueue(replyTo -> msg)
-        }
+        pendingRequests ++= msgs.map(replyTo -> _)
     }
   }
 
@@ -158,12 +153,12 @@ class DubboActor(dubboHost: String,
   }
 
   private def sendRequestToDubbo(msgs: Seq[(ActorRef, DubboMessage)]) = {
-    val toSend = msgs.foldLeft(ByteString.empty) { (accum,msg) =>
+    val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
       runningRequests += msg._2.requestId -> msg._1
       accum ++ msg._2.toByteString
     }
     if (toSend.nonEmpty) {
-      connection.get ! Write(toSend,DoneWrite)
+      connection.get ! Write(toSend, DoneWrite)
       isWriting = true
     }
   }
