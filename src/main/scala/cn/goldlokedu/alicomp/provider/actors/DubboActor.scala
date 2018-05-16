@@ -2,7 +2,7 @@ package cn.goldlokedu.alicomp.provider.actors
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorRef, Stash}
+import akka.actor.{Actor, ActorRef}
 import akka.event.LoggingAdapter
 import akka.io.Tcp.Event
 import akka.io.{IO, Tcp}
@@ -23,7 +23,7 @@ class DubboActor(dubboHost: String,
   // Akka IO
   var connection: Option[ActorRef] = None
 
-  var currentWritingCount = 0
+  var isWriting = false
 
   // 当前正在执行的请求
   val runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
@@ -54,8 +54,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      //      implicit val ec = context.dispatcher
+      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
 
       context become ready
   }
@@ -66,7 +66,7 @@ class DubboActor(dubboHost: String,
     case msgs: Seq[DubboMessage] =>
       trySendRequestToDubbo(sender, msgs)
     case DoneWrite =>
-      currentWritingCount -= 1
+      isWriting = false
       trySendNextPending()
     case Received(data) =>
       val (newBuilder, messages) = dubboMessageBuilder.feed(data)
@@ -101,11 +101,9 @@ class DubboActor(dubboHost: String,
   private def trySendNextPending(): Unit = {
     (isBelowThrehold, hasAnyPending, notWriting) match {
       case (true, true, true) =>
-        var a = awailableCount
-        val send = pendingRequests.dequeueAll(_ => {
-          a -= 1;
-          a >= 0
-        })
+        val a = awailableCount
+        val send = pendingRequests.take(a)
+        pendingRequests.drop(a)
         sendRequestToDubbo(send)
       case _ =>
     }
@@ -139,11 +137,6 @@ class DubboActor(dubboHost: String,
   }
 
   @inline
-  private def isWriting = {
-    currentWritingCount != 0
-  }
-
-  @inline
   private def hasAnyPending = {
     pendingRequests.nonEmpty
   }
@@ -165,12 +158,14 @@ class DubboActor(dubboHost: String,
   }
 
   private def sendRequestToDubbo(msgs: Seq[(ActorRef, DubboMessage)]) = {
-    val toSend = msgs.map { msg =>
-      currentWritingCount += 1
+    val toSend = msgs.foldLeft(ByteString.empty) { (accum,msg) =>
       runningRequests += msg._2.requestId -> msg._1
-      Write(msg._2.toByteString, DoneWrite)
+      accum ++ msg._2.toByteString
     }
-    connection.get ! CompoundWrite(toSend.head, WriteCommand(toSend.tail))
+    if (toSend.nonEmpty) {
+      connection.get ! Write(toSend,DoneWrite)
+      isWriting = true
+    }
   }
 
   private def pendRequest(replyTo: ActorRef, msg: DubboMessage) = {
