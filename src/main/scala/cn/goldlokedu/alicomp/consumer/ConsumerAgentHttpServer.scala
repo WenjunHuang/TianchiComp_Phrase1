@@ -29,13 +29,22 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
           val pts = formData.fields.get("parameterTypesString").get
           val param = formData.fields.get("parameter").get
 
-          (agentRouter ? BenchmarkRequest(
+          val double = Seq((agentRouter ? BenchmarkRequest(
             requestId = UUID.randomUUID().getLeastSignificantBits,
             interface = intr,
             method = method,
             parameterTypeString = pts,
             parameter = param))
-            .mapTo[Try[BenchmarkResponse]]
+            .mapTo[Try[BenchmarkResponse]],
+            (agentRouter ? BenchmarkRequest(
+              requestId = UUID.randomUUID().getLeastSignificantBits,
+              interface = intr,
+              method = method,
+              parameterTypeString = pts,
+              parameter = param))
+              .mapTo[Try[BenchmarkResponse]])
+
+          Future.firstCompletedOf(double)
             .map {
               case Success(result) if result.status == 20 =>
                 HttpResponse(200, entity = String.valueOf(result.result.get))
