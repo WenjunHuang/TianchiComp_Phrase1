@@ -37,7 +37,7 @@ case class DubboMessageBuilder(first: ByteString) {
           // 内容数据已经有了
           val split = restData.splitAt(16 + dataLength)
           val body = split._1.drop(16)
-          fold(split._2, DubboMessage(isReq, is2Way, isEvent, serId, status, requestId, dataLength, body) +: messages)
+          fold(split._2, messages :+ DubboMessage(isReq, is2Way, isEvent, serId, status, requestId, dataLength, body))
         } else {
           (restData, messages) // 只有头部，没有body
         }

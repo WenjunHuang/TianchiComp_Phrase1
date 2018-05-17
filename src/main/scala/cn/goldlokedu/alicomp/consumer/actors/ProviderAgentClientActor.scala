@@ -8,6 +8,7 @@ import akka.io.{IO, Tcp}
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
 
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 
@@ -21,7 +22,7 @@ class ProviderAgentClientActor(providerName: String,
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
 
   var isWriting = false
-  val pendingRequests: mutable.Queue[(ActorRef, BenchmarkRequest)] = mutable.Queue.empty
+  var pendingRequests: Queue[(ActorRef, BenchmarkRequest)] = Queue.empty
   val workingRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
   var connection: Option[ActorRef] = None
 
@@ -55,7 +56,7 @@ class ProviderAgentClientActor(providerName: String,
 
     case msg: BenchmarkRequest =>
       // dubbo 结果
-      pendingRequests.enqueue(sender -> msg)
+      pendingRequests = pendingRequests.enqueue(sender -> msg)
       if (!isWriting) {
         sendPendingRequests()
       }
@@ -65,15 +66,16 @@ class ProviderAgentClientActor(providerName: String,
   }
 
   def sendPendingRequests() = {
-    val msgs = pendingRequests.dequeueAll(_ => true)
-    val builder = ByteString.newBuilder
-    msgs.foreach { msg =>
-      builder.append(msg._2)
-      workingRequests(msg._2.requestId) = msg._1
-    }
+    if(pendingRequests.nonEmpty) {
+      val toSend = pendingRequests.foldLeft(ByteString.empty) { (accum, msg) =>
+        workingRequests(msg._2.requestId) = msg._1
+        accum ++ msg._2
+      }
 
-    isWriting = true
-    connection.get ! Write(builder.result, DoneWrite)
+      isWriting = true
+      connection.get ! Write(toSend, DoneWrite)
+      pendingRequests = Queue.empty
+    }
   }
 }
 
