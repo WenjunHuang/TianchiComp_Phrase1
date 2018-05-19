@@ -1,24 +1,20 @@
 #!/bin/bash
 
-
-# for local test
-ETCD_HOST=127.0.0.1
+# production
+ETCD_HOST=localhost
 ETCD_PORT=2379
-AGENT_HOST=127.0.0.1
-DUBBO_HOST=127.0.0.1
+DUBBO_PORT=20880
 AGENT_PATH=/Users/xxzyjy/Sources/TianChi4thCompetition/target/scala-2.12/mesh-agent.jar
 
 if [[ "$1" == "consumer" ]]; then
   echo "Starting consumer agent..."
   java -jar \
+       -server \
        -Xms1536M \
        -Xmx1536M \
        -DRUN_TYPE=consumer \
-       -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
-       -DACTOR_SYSTEM_PORT=2551 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
-       -DHTTP_LISTENING_HOST=${AGENT_HOST} \
        -DHTTP_LISTENING_PORT=20000 \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-small" ]]; then
@@ -27,15 +23,12 @@ elif [[ "$1" == "provider-small" ]]; then
        -Xms512M \
        -Xmx512M \
        -DRUN_TYPE=provider-small \
-       -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
-       -DACTOR_SYSTEM_PORT=2552 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
-       -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
-       -DDUBBO_PROVIDER_PORT=20889 \
+       -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
        -DDUBBO_CONNECTION_COUNT=2 \
        -DDUBBO_COUNT_PER_CONNECTION=100 \
-       -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
+       -DPROVIDER_AGENT_HOST=provider-small \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-medium" ]]; then
   echo "Starting medium provider agent..."
@@ -43,15 +36,12 @@ elif [[ "$1" == "provider-medium" ]]; then
        -Xms1536M \
        -Xmx1536M \
        -DRUN_TYPE=provider-medium \
-       -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
-       -DACTOR_SYSTEM_PORT=2553 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
-       -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
-       -DDUBBO_PROVIDER_PORT=20890 \
+       -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
        -DDUBBO_CONNECTION_COUNT=2 \
        -DDUBBO_COUNT_PER_CONNECTION=100 \
-       -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
+       -DPROVIDER_AGENT_HOST=provider-medium \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-large" ]]; then
   echo "Starting large provider agent..."
@@ -59,15 +49,12 @@ elif [[ "$1" == "provider-large" ]]; then
        -Xms2560M \
        -Xmx2560M \
        -DRUN_TYPE=provider-large \
-       -DACTOR_SYSTEM_HOST=${AGENT_HOST} \
-       -DACTOR_SYSTEM_PORT=2554 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
-       -DDUBBO_PROVIDER_HOST=${DUBBO_HOST} \
-       -DDUBBO_PROVIDER_PORT=20880 \
+       -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
        -DDUBBO_CONNECTION_COUNT=2 \
        -DDUBBO_COUNT_PER_CONNECTION=100 \
-       -DPROVIDER_AGENT_HOST=${AGENT_HOST} \
+       -DPROVIDER_AGENT_HOST=localhost \
        ${AGENT_PATH}
 else
   echo "Unrecognized arguments, exit."
