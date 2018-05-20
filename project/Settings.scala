@@ -21,6 +21,7 @@ object Settings {
 
   val dependencies = Def.setting(Seq(
     "com.typesafe.akka" %% "akka-actor" % versions.akkaVersion,
+    "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.typesafe.akka" %% "akka-http" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
