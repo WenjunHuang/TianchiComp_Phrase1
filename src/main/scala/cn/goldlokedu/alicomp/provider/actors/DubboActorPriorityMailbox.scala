@@ -12,6 +12,5 @@ class DubboActorPriorityMailbox(settings:ActorSystem.Settings,config:Config) ext
     case Received(_) => 1
     case _ => 2
   }
-) {
+)
 
-}
