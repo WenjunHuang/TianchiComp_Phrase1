@@ -59,7 +59,7 @@ class DubboActor(dubboHost: String,
       // debug
       implicit val ec = context.dispatcher
       //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
-//      context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
+      //      context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
   }
@@ -123,12 +123,13 @@ class DubboActor(dubboHost: String,
         val (d, l) = msgs.splitAt(a)
         sendRequestToDubbo(d.map(replyTo -> _))
         pendingRequests ++= l.map(replyTo -> _)
-      case (true,false,true) =>
+      case (true, false, true) =>
         pendingRequests ++= msgs.map(replyTo -> _)
         val a = awailableCount
         val (d, l) = pendingRequests.splitAt(a)
         sendRequestToDubbo(d)
         pendingRequests = l
+      case _ =>
     }
   }
 
