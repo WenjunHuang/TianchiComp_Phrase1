@@ -133,6 +133,7 @@ class DubboActor(dubboHost: String,
             }
           }
         }
+      case _ =>
     }
   }
 
