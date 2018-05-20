@@ -5,9 +5,6 @@ import akka.io.Tcp.{Event, Received, Write}
 import akka.routing.Router
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{DubboMessage, DubboMessageBuilder}
-import scala.concurrent.duration._
-
-import scala.collection.mutable
 
 class DubboTcpClient(connection: ActorRef,
                      dubboActor: Router) extends Actor with ActorLogging {
