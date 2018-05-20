@@ -57,9 +57,9 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-      //      implicit val ec = context.dispatcher
-      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
-      //      context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
+      implicit val ec = context.dispatcher
+      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      //            context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
   }
@@ -84,6 +84,8 @@ class DubboActor(dubboHost: String,
         // 有可能一次读取就获取了多个回复
         messages.groupBy { msg =>
           if (msg.isResponse) {
+            if (msg.status != 20)
+              logger.error(s"get error response from dubbo")
             runningRequests.remove(msg.requestId)
           } else {
             None
