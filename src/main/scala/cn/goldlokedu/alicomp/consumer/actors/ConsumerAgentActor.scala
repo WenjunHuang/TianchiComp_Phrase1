@@ -88,11 +88,11 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
     val roll = tick % 12
     val cap = roll match {
       case x if (0 to 5) contains x =>
-        CapacityType.S
+        CapacityType.L
       case x if (6 to 9) contains x =>
         CapacityType.M
       case x if (10 to 11) contains x=>
-        CapacityType.L
+        CapacityType.S
       case _ =>
         CapacityType.L
     }
