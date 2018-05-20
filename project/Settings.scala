@@ -25,7 +25,8 @@ object Settings {
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
-//    "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
+    "com.twitter" %% "chill-akka" % versions.twitterChillAkka,
+
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
     "org.slf4j" % "slf4j-api" % versions.slf4jVersion,

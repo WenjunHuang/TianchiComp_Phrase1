@@ -19,10 +19,13 @@ class ProviderAgentClientActor(providerName: String,
   import ProviderAgentClientActor._
   import context.system
 
+  val BatchCount = 100
+
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
 
   var isWriting = false
-  var pendingRequests: Queue[(ActorRef, BenchmarkRequest)] = Queue.empty
+  var pendingRequests: Seq[(ActorRef, BenchmarkRequest)] = Nil
+
   val workingRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
   var connection: Option[ActorRef] = None
 
@@ -44,38 +47,59 @@ class ProviderAgentClientActor(providerName: String,
 
   def ready: Receive = {
     case Received(data) =>
-      val it = dubboMessageHandler.feed(data)
-      dubboMessageHandler = it._1
-      it._2.foreach { msg =>
-        workingRequests.remove(msg.requestId) match {
-          case Some(actorRef) =>
-            actorRef ! BenchmarkResponse(msg)
-          case _ =>
+      val (newHandler, msgs) = dubboMessageHandler.feed(data)
+      dubboMessageHandler = newHandler
+      if (msgs.nonEmpty) {
+        msgs.foreach { msg =>
+          workingRequests.remove(msg.requestId) match {
+            case Some(actorRef) =>
+              actorRef ! BenchmarkResponse(msg)
+            case _ =>
+          }
         }
       }
 
     case msg: BenchmarkRequest =>
-      // dubbo 结果
-      pendingRequests = pendingRequests.enqueue(sender -> msg)
-      if (!isWriting) {
-        sendPendingRequests()
-      }
+      sendBenchmark(msg)
     case DoneWrite =>
       isWriting = false
       sendPendingRequests()
   }
 
-  def sendPendingRequests() = {
-    if(pendingRequests.nonEmpty) {
-      val toSend = pendingRequests.foldLeft(ByteString.empty) { (accum, msg) =>
-        workingRequests(msg._2.requestId) = msg._1
-        accum ++ msg._2
-      }
-
-      isWriting = true
-      connection.get ! Write(toSend, DoneWrite)
-      pendingRequests = Queue.empty
+  @inline
+  def sendBenchmark(msg: BenchmarkRequest) = {
+    (isWriting, pendingRequests.isEmpty) match {
+      case (true, _) =>
+        pendingRequests :+= (sender -> msg)
+      case (true, true) =>
+        pendingRequests :+= (sender -> msg)
+      case (false,true) =>
+        pendingRequests :+= (sender -> msg)
+        sendPendingRequests()
+      case _ =>
+        send(Seq(sender -> msg))
     }
+  }
+
+  @inline
+  def sendPendingRequests() = {
+    (isWriting, pendingRequests.isEmpty) match {
+      case (true, _) =>
+      case (_,true) =>
+      case (false, false) =>
+        send(pendingRequests)
+        pendingRequests = Nil
+    }
+  }
+
+  @inline
+  def send(msgs: Seq[(ActorRef, BenchmarkRequest)]) = {
+    val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
+      workingRequests(msg._2.requestId) = msg._1
+      accum ++ msg._2
+    }
+    isWriting = true
+    connection.get ! Write(toSend, DoneWrite)
   }
 }
 
