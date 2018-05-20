@@ -112,7 +112,27 @@ class DubboActor(dubboHost: String,
         val (send, rest) = pendingRequests.splitAt(awailableCount)
         pendingRequests = rest
         sendRequestToDubbo(send)
-      case _ =>
+      case (false, true, false) =>
+        //已经超出阈值了
+        if (pendingRequests.size > threhold / 3) {
+          val (drop, rest) = pendingRequests.splitAt(pendingRequests.size - threhold)
+          pendingRequests = rest
+          drop.groupBy(_._1).foreach { it =>
+            val (reply, msg) = it
+            reply ! msg.map { i =>
+              DubboMessage(
+                isRequest = false,
+                is2Way = true,
+                isEvent = false,
+                serializationId = 0x60.toByte,
+                status = 300.toByte,
+                requestId = i._2.requestId,
+                dataLength = 0,
+                body = ByteString.empty
+              )
+            }
+          }
+        }
     }
   }
 
