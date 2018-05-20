@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import akka.actor.{Actor, Props}
 import akka.event.LoggingAdapter
 import akka.io.{IO, Tcp}
-import akka.routing.{ActorRefRoutee, RandomRoutingLogic, RoundRobinRoutingLogic, Router}
+import akka.routing._
 import cn.goldlokedu.alicomp.documents.{CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 
@@ -31,7 +31,7 @@ class DubboTcpServer(serverHost: String,
       context watch r
       ActorRefRoutee(r)
     }
-    Router(RoundRobinRoutingLogic(), routees)
+    Router(SmallestMailboxRoutingLogic(), routees)
   }
 
   IO(Tcp) ! Bind(self, new InetSocketAddress(serverHost, 0))
