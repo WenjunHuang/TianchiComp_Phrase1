@@ -31,7 +31,7 @@ class DubboTcpServer(serverHost: String,
       context watch r
       ActorRefRoutee(r)
     }
-    Router(SmallestMailboxRoutingLogic(), routees)
+    Router(RoundRobinRoutingLogic(), routees)
   }
 
   IO(Tcp) ! Bind(self, new InetSocketAddress(serverHost, 0))
