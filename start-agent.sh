@@ -53,7 +53,7 @@ elif [[ "$1" == "provider-large" ]]; then
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
        -DDUBBO_CONNECTION_COUNT=2 \
-       -DDUBBO_COUNT_PER_CONNECTION=100 \
+       -DDUBBO_COUNT_PER_CONNECTION=95 \
        -DPROVIDER_AGENT_HOST=provider-large \
        ${AGENT_PATH}
 else
