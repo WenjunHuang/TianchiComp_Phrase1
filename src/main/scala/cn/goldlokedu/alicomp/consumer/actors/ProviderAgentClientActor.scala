@@ -8,7 +8,6 @@ import akka.io.{IO, Tcp}
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
 
-import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 
@@ -19,13 +18,11 @@ class ProviderAgentClientActor(providerName: String,
   import ProviderAgentClientActor._
   import context.system
 
-  val BatchCount = 100
 
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
 
   var isWriting = false
-  var pendingRequests: Seq[(ActorRef, BenchmarkRequest)] = Nil
-
+  var waitingRequests: Seq[(ActorRef, BenchmarkRequest)] = Nil
   val workingRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
   var connection: Option[ActorRef] = None
 
@@ -43,9 +40,14 @@ class ProviderAgentClientActor(providerName: String,
       connection = Some(sender())
       connection.get ! Register(self)
       context become ready
+
+//      implicit val ec = context.dispatcher
+//      context.system.scheduler.schedule(1 second, 1 second, self, Print)
   }
 
   def ready: Receive = {
+    case Print =>
+      log.info(s"isWriting: ${isWriting},waiting: ${waitingRequests.size}, working: ${workingRequests.size}")
     case Received(data) =>
       val (newHandler, msgs) = dubboMessageHandler.feed(data)
       dubboMessageHandler = newHandler
@@ -58,53 +60,37 @@ class ProviderAgentClientActor(providerName: String,
           }
         }
       }
-
     case msg: BenchmarkRequest =>
-      sendBenchmark(msg)
+      waitingRequests = waitingRequests :+ (sender -> msg)
+      sendPendingRequests()
     case DoneWrite =>
       isWriting = false
       sendPendingRequests()
   }
 
   @inline
-  def sendBenchmark(msg: BenchmarkRequest) = {
-    (isWriting, pendingRequests.isEmpty) match {
-      case (true, _) =>
-        pendingRequests :+= (sender -> msg)
-      case (true, true) =>
-        pendingRequests :+= (sender -> msg)
-      case (false,true) =>
-        pendingRequests :+= (sender -> msg)
-        sendPendingRequests()
-      case _ =>
-        send(Seq(sender -> msg))
-    }
-  }
-
-  @inline
   def sendPendingRequests() = {
-    (isWriting, pendingRequests.isEmpty) match {
+    (isWriting, waitingRequests.isEmpty) match {
       case (true, _) =>
-      case (_,true) =>
+      case (_, true) =>
       case (false, false) =>
-        send(pendingRequests)
-        pendingRequests = Nil
+        val toSend = waitingRequests.foldLeft(ByteString.empty) { (accum, msg) =>
+          workingRequests(msg._2.requestId) = msg._1
+          accum ++ msg._2
+        }
+        if (toSend.nonEmpty) {
+          connection.get ! Write(toSend, DoneWrite)
+          isWriting = true
+          waitingRequests = Nil
+        }
     }
-  }
-
-  @inline
-  def send(msgs: Seq[(ActorRef, BenchmarkRequest)]) = {
-    val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
-      workingRequests(msg._2.requestId) = msg._1
-      accum ++ msg._2
-    }
-    isWriting = true
-    connection.get ! Write(toSend, DoneWrite)
   }
 }
 
 object ProviderAgentClientActor {
 
   case object DoneWrite extends Event
+
+  case object Print
 
 }
