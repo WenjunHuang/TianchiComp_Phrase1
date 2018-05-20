@@ -28,6 +28,8 @@ class DubboActor(dubboHost: String,
 
   // 当前正在执行的请求
   var runningRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
+  // 当前正在执行的请求数，这个值主要用来加快IO过程
+  var runningRequestsCount = 0
 
   // 未发送的请求
   var pendingRequests: Queue[(ActorRef, DubboMessage)] = Queue.empty
@@ -64,7 +66,7 @@ class DubboActor(dubboHost: String,
 
   def ready: Receive = {
     case PrintPayload =>
-      logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
+      logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequestsCount}")
     case TrySend =>
       trySendNextPending()
     case msgs: Seq[DubboMessage] =>
@@ -75,21 +77,23 @@ class DubboActor(dubboHost: String,
     case Received(data) =>
       val (newBuilder, messages) = dubboMessageBuilder.feed(data)
       dubboMessageBuilder = newBuilder
+      if (messages.nonEmpty) {
+        runningRequestsCount -= messages.size
+        trySendNextPending()
 
-      // 有可能一次读取就获取了多个回复
-      messages.foreach { msg =>
-        if (msg.isResponse) {
-          runningRequests.remove(msg.requestId) match {
-            case Some(replyTo) =>
-              replyTo ! msg
-            case None =>
-            // 收到一个未知requestId的回复?这可能是个bug
-            //              logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
+        // 有可能一次读取就获取了多个回复
+        messages.foreach { msg =>
+          if (msg.isResponse) {
+            runningRequests.remove(msg.requestId) match {
+              case Some(replyTo) =>
+                replyTo ! msg
+              case None =>
+              // 收到一个未知requestId的回复?这可能是个bug
+              //              logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
+            }
           }
         }
       }
-      if (messages.nonEmpty)
-        trySendNextPending()
 
     case _: ConnectionClosed =>
       logger.info("connection closed by dubbo,try reconnect")
@@ -130,7 +134,7 @@ class DubboActor(dubboHost: String,
 
   @inline
   private def awailableCount = {
-    threhold - runningRequests.size
+    threhold - runningRequestsCount
   }
 
   @inline
@@ -156,12 +160,13 @@ class DubboActor(dubboHost: String,
 
   @inline
   private def isBelowThrehold = {
-    runningRequests.size < threhold
+    runningRequestsCount < threhold
   }
 
   private def sendRequestToDubbo(msgs: Seq[(ActorRef, DubboMessage)]) = {
     val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
       runningRequests += msg._2.requestId -> msg._1
+      runningRequestsCount += 1
       accum ++ msg._2.toByteString
     }
     if (toSend.nonEmpty) {
