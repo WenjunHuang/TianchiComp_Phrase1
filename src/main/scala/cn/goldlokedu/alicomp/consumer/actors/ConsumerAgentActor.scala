@@ -82,18 +82,18 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
   }
 
   def selectProviderAgent: Option[ActorRef] = {
-    val roll = Random.nextDouble * 17
-    val cap = roll match {
-      case x if x >= 0 && x <= 3.5 =>
-        CapacityType.S
-      case x if x > 3.5 && x <= 9.5 =>
-        CapacityType.M
-      case x if x > 9.5 =>
-        CapacityType.L
-      case _ =>
-        CapacityType.L
-    }
-
+//    val roll = Random.nextDouble * 17
+//    val cap = roll match {
+//      case x if x >= 0 && x <= 3.5 =>
+//        CapacityType.S
+//      case x if x > 3.5 && x <= 9.5 =>
+//        CapacityType.M
+//      case x if x > 9.5 =>
+//        CapacityType.L
+//      case _ =>
+//        CapacityType.L
+//    }
+    val cap = CapacityType.L
     providerAgents.get(cap).orElse(providerAgents.headOption.map(_._2))
   }
 }
