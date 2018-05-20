@@ -130,6 +130,7 @@ class DubboActor(dubboHost: String,
         sendRequestToDubbo(d)
         pendingRequests = l
       case _ =>
+        pendingRequests ++= msgs
     }
   }
 
