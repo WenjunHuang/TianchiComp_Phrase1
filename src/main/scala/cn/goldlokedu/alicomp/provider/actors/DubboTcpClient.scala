@@ -15,7 +15,7 @@ class DubboTcpClient(connection: ActorRef,
 
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
   var isWriting = false
-  var pendingResults: mutable.Queue[DubboMessage] = mutable.Queue.empty
+  var pendingResults: Seq[DubboMessage] = Nil
 
   override def receive: Receive = {
     case Received(data) =>
@@ -26,22 +26,32 @@ class DubboTcpClient(connection: ActorRef,
         dubboActor.route(it._2, self)
     case DoneWrite =>
       isWriting = false
-    case msg: DubboMessage =>
+      trySendBackPendingResults()
+    case msgs: Seq[DubboMessage] =>
       // dubbo 结果
-      pendingResults.enqueue(msg)
-      if (!isWriting) {
-        sendBack()
+      (isWriting, pendingResults.isEmpty) match {
+        case (false, true) =>
+          sendBack(msgs)
+        case (false, false) =>
+          pendingResults ++= msgs
+          trySendBackPendingResults()
+        case (true, _) =>
+          pendingResults ++= msgs
       }
   }
 
-  def sendBack() = {
-    if (pendingResults.nonEmpty) {
-      val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
+  def trySendBackPendingResults() = {
+    sendBack(pendingResults)
+    isWriting = true
+    pendingResults = Nil
+  }
+
+  def sendBack(msgs: Seq[DubboMessage]) = {
+    if (msgs.nonEmpty) {
+      val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
         accum ++ msg.toByteString
       }
       connection ! Write(toSend, DoneWrite)
-      isWriting = true
-      pendingResults.clear()
     }
   }
 }

@@ -82,16 +82,15 @@ class DubboActor(dubboHost: String,
         trySendNextPending()
 
         // 有可能一次读取就获取了多个回复
-        messages.foreach { msg =>
+        messages.groupBy { msg =>
           if (msg.isResponse) {
-            runningRequests.remove(msg.requestId) match {
-              case Some(replyTo) =>
-                replyTo ! msg
-              case None =>
-              // 收到一个未知requestId的回复?这可能是个bug
-              //              logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
-            }
+            runningRequests.remove(msg.requestId)
+          } else {
+            None
           }
+        }.foreach {
+          case (Some(replyTo), messages) =>
+            replyTo ! messages
         }
       }
 

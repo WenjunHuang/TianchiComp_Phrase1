@@ -18,7 +18,7 @@ trait AkkaInfrastructure {
 
   implicit def etcdClient: EtcdClient = new EtcdClient(etcdHost, etcdPort)
 
-  implicit lazy val timeout: Timeout = Timeout(5 seconds)
+  implicit lazy val timeout: Timeout = Timeout(10 seconds)
 
   sys.addShutdownHook(system.terminate())
 }
