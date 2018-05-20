@@ -55,8 +55,9 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-//            implicit val ec = context.dispatcher
-//            context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      implicit val ec = context.dispatcher
+      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+//      context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
   }
@@ -64,6 +65,8 @@ class DubboActor(dubboHost: String,
   def ready: Receive = {
     case PrintPayload =>
       logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequests.size}")
+    case TrySend =>
+      trySendNextPending()
     case msgs: Seq[DubboMessage] =>
       trySendRequestToDubbo(sender, msgs)
     case DoneWrite =>
@@ -80,8 +83,8 @@ class DubboActor(dubboHost: String,
             case Some(replyTo) =>
               replyTo ! msg
             case None =>
-              // 收到一个未知requestId的回复?这可能是个bug
-              logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
+            // 收到一个未知requestId的回复?这可能是个bug
+            //              logger.error(s"unknown dubbo response ${msg.requestId}, this message is not send by me")
           }
         }
       }
@@ -116,8 +119,12 @@ class DubboActor(dubboHost: String,
         val (d, l) = msgs.splitAt(a)
         sendRequestToDubbo(d.map(replyTo -> _))
         pendingRequests ++= l.map(replyTo -> _)
-      case _ =>
+      case (true,false,true) =>
         pendingRequests ++= msgs.map(replyTo -> _)
+        val a = awailableCount
+        val (d, l) = pendingRequests.splitAt(a)
+        sendRequestToDubbo(d)
+        pendingRequests = l
     }
   }
 
@@ -176,5 +183,9 @@ object DubboActor {
   case object DoneWrite extends Event
 
   case object PrintPayload
+
+  case object TrySend
+
+  case class FeedNewReceived(data: ByteString)
 
 }
