@@ -30,8 +30,6 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
       selectProviderAgent match {
         case Some(actorRef) =>
           actorRef forward req
-        //          actorRef forward toConsumerRequest(req)
-        //          actorRef.tell(req, sender)
         case None =>
           sender ! Status.Failure(new Exception("not provider"))
       }
