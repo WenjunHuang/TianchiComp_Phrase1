@@ -47,7 +47,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
       .map { ras =>
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
-          val client = context.actorOf(Props(new ProviderAgentClientActor(agent.agentName, agent.host, agent.port)))
+          val client = context.actorOf(Props(new ProviderAgentClientActor(agent.agentName, agent.host, agent.port)), agent.agentName)
           providerAgents(agent.cap) = client
         }
       }
@@ -79,7 +79,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
     //      stash()
   }
 
-  var tick:Long = 0l
+  var tick: Long = 0l
 
   def selectProviderAgent: Option[ActorRef] = {
     tick += 1
@@ -89,7 +89,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
         CapacityType.S
       case x if (1 to 2) contains x =>
         CapacityType.M
-      case x if (4 to 9) contains x=>
+      case x if (4 to 9) contains x =>
         CapacityType.L
       case _ =>
         CapacityType.L
