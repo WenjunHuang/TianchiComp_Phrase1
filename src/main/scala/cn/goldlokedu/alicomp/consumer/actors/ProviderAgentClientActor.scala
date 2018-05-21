@@ -60,6 +60,7 @@ class ProviderAgentClientActor(providerName: String,
           }
         }
       }
+      sendPendingRequests()
     case msg: BenchmarkRequest =>
       waitingRequests = waitingRequests :+ (sender -> msg)
       sendPendingRequests()
