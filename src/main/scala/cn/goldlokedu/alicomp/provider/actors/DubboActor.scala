@@ -32,7 +32,7 @@ class DubboActor(dubboHost: String,
   var runningRequestsCount = 0
 
   // 未发送的请求
-  var pendingRequests: Queue[(ActorRef, DubboMessage)] = Queue.empty
+  var pendingRequests: Queue[(ActorRef, ByteString)] = Queue.empty
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -69,7 +69,7 @@ class DubboActor(dubboHost: String,
       logger.info(s"${self.path.name}: pending: ${pendingRequests.size}, working: ${runningRequestsCount}")
     case TrySend =>
       trySendNextPending()
-    case msgs: Seq[DubboMessage] =>
+    case msgs: Seq[ByteString] =>
       trySendRequestToDubbo(sender, msgs)
     case DoneWrite =>
       isWriting = false
@@ -137,7 +137,7 @@ class DubboActor(dubboHost: String,
     }
   }
 
-  private def trySendRequestToDubbo(replyTo: ActorRef, msgs: Seq[DubboMessage]): Unit = {
+  private def trySendRequestToDubbo(replyTo: ActorRef, msgs: Seq[ByteString]): Unit = {
     (isBelowThrehold, noPending, notWriting) match {
       case (true, true, true) =>
         val a = awailableCount
@@ -186,11 +186,11 @@ class DubboActor(dubboHost: String,
     runningRequestsCount < threhold
   }
 
-  private def sendRequestToDubbo(msgs: Seq[(ActorRef, DubboMessage)]) = {
+  private def sendRequestToDubbo(msgs: Seq[(ActorRef, ByteString)]) = {
     val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
-      runningRequests += msg._2.requestId -> msg._1
+      runningRequests += DubboMessage.extractRequestId(msg._2).get -> msg._1
       runningRequestsCount += 1
-      accum ++ msg._2.toByteString
+      accum ++ msg._2
     }
     if (toSend.nonEmpty) {
       connection.get ! Write(toSend, DoneWrite)
@@ -198,7 +198,7 @@ class DubboActor(dubboHost: String,
     }
   }
 
-  private def pendRequest(replyTo: ActorRef, msg: DubboMessage) = {
+  private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
     pendingRequests.enqueue(replyTo -> msg)
   }
 

@@ -17,7 +17,7 @@ class DubboTcpClient(connection: ActorRef,
 
   override def receive: Receive = {
     case Received(data) =>
-      val it = dubboMessageHandler.feed(data)
+      val it = dubboMessageHandler.feedRaw(data)
       dubboMessageHandler = it._1
       if (it._2.nonEmpty)
         dubboActor.route(it._2, self)

@@ -12,6 +12,38 @@ case class DubboMessageBuilder(first: ByteString) {
     extract(first ++ next)
   }
 
+  def feedRaw(next: ByteString): (DubboMessageBuilder, Seq[ByteString]) = {
+    extractRaw(first ++ next)
+  }
+
+  private def extractRaw(data: ByteString): (DubboMessageBuilder, Seq[ByteString]) = {
+    @tailrec
+    def fold(restData: ByteString, messages: Seq[ByteString]): (ByteString, Seq[ByteString]) = {
+      if (restData.size > 16) {
+        // 16个字节的头部
+        val header = restData.take(16)
+        val dataLength = header.slice(12, 16).zipWithIndex.foldLeft(0) { (accum, byte) =>
+          accum | (java.lang.Byte.toUnsignedInt(byte._1) << ((3 - byte._2) * 8))
+        }
+
+        // 消息已经完整，开始解析
+        if (restData.size >= 16 + dataLength) {
+
+          // 内容数据已经有了
+          val split = restData.splitAt(16 + dataLength)
+          fold(split._2, messages :+ split._1)
+        } else {
+          (restData, messages) // 只有头部，没有body
+        }
+      } else {
+        (restData, messages) // 头部不完整
+      }
+    }
+
+    val r = fold(data, Nil)
+    (DubboMessageBuilder(r._1), r._2.reverse)
+  }
+
   private def extract(data: ByteString): (DubboMessageBuilder, Seq[DubboMessage]) = {
     @tailrec
     def fold(restData: ByteString, messages: Seq[DubboMessage]): (ByteString, Seq[DubboMessage]) = {

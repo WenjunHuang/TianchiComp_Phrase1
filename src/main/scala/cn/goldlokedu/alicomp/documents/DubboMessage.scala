@@ -58,3 +58,16 @@ case class DubboMessage(isRequest: Boolean,
   }
 }
 
+object DubboMessage {
+  def extractRequestId(msg: ByteString): Option[Long] = {
+    if (msg.size < 12)
+      None
+    else {
+      val requestId = msg.slice(4, 12).zipWithIndex.foldLeft(0L) { (accum, byte) =>
+        accum | (java.lang.Byte.toUnsignedLong(byte._1) << ((7 - byte._2) * 8))
+      }
+      Some(requestId)
+    }
+
+  }
+}
