@@ -6,6 +6,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
 import akka.stream.scaladsl.Sink
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
@@ -14,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import akka.http.scaladsl.server.Directives._
 
 import scala.util.{Success, Try}
 
@@ -29,32 +31,28 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
           val pts = formData.fields.get("parameterTypesString").get
           val param = formData.fields.get("parameter").get
 
-          val double = Seq((agentRouter ? BenchmarkRequest(
-            requestId = UUID.randomUUID().getLeastSignificantBits,
-            interface = intr,
-            method = method,
-            parameterTypeString = pts,
-            parameter = param))
-            .mapTo[Try[BenchmarkResponse]],
+          val double =
             (agentRouter ? BenchmarkRequest(
               requestId = UUID.randomUUID().getLeastSignificantBits,
               interface = intr,
               method = method,
               parameterTypeString = pts,
               parameter = param))
-              .mapTo[Try[BenchmarkResponse]])
+              .mapTo[Try[BenchmarkResponse]]
 
-          Future.firstCompletedOf(double)
-            .map {
-              case Success(result) if result.status == 20 =>
-                HttpResponse(200, entity = String.valueOf(result.result.get))
-              case _ =>
-                HttpResponse(500)
-            }
+          double.map {
+            case Success(result) if result.status == 20 =>
+              HttpResponse(200, entity = String.valueOf(result.result.get))
+            case _ =>
+              HttpResponse(500)
+          }
         }
 
   }
 
+  //  val requestRoute:Route = (post & formFields('interface.as[String],'method.as[String],'parameterTypesString.as[String],'parameter.as[String])) {
+  //
+  //  }
   def run() = {
     val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
     serverSource.to(Sink.foreach { connection =>
