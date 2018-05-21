@@ -58,7 +58,7 @@ class DubboActor(dubboHost: String,
       connection.get ! Register(self)
       // debug
       implicit val ec = context.dispatcher
-      context.system.scheduler.schedule(1 second, 100 milliseconds, self, PrintPayload)
+      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
