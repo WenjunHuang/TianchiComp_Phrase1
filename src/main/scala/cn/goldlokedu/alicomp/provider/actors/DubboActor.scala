@@ -32,7 +32,7 @@ class DubboActor(dubboHost: String,
   var runningRequestsCount = 0
 
   // 未发送的请求
-  var pendingRequests: Queue[(ActorRef, ByteString)] = Queue.empty
+  var pendingRequests: Seq[(ActorRef, ByteString)] = Nil
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -178,7 +178,7 @@ class DubboActor(dubboHost: String,
   }
 
   private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
-    pendingRequests.enqueue(replyTo -> msg)
+    pendingRequests :+= replyTo -> msg
   }
 
 }
