@@ -8,6 +8,7 @@ import akka.io.{IO, Tcp}
 import akka.util.ByteString
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessageBuilder}
 
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 
@@ -22,7 +23,7 @@ class ProviderAgentClientActor(providerName: String,
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
 
   var isWriting = false
-  var waitingRequests: Seq[(ActorRef, BenchmarkRequest)] = Nil
+  var waitingRequests: Queue[(ActorRef, BenchmarkRequest)] = Queue.empty
   val workingRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
   var connection: Option[ActorRef] = None
 
@@ -41,8 +42,8 @@ class ProviderAgentClientActor(providerName: String,
       connection.get ! Register(self)
       context become ready
 
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(1 second, 1 second, self, Print)
+    //      implicit val ec = context.dispatcher
+    //      context.system.scheduler.schedule(1 second, 1 second, self, Print)
   }
 
   def ready: Receive = {
@@ -62,7 +63,7 @@ class ProviderAgentClientActor(providerName: String,
       }
       sendPendingRequests()
     case msg: BenchmarkRequest =>
-      waitingRequests = waitingRequests :+ (sender -> msg)
+      waitingRequests = waitingRequests.enqueue(sender -> msg)
       sendPendingRequests()
     case DoneWrite =>
       isWriting = false
@@ -82,7 +83,7 @@ class ProviderAgentClientActor(providerName: String,
         if (toSend.nonEmpty) {
           connection.get ! Write(toSend, DoneWrite)
           isWriting = true
-          waitingRequests = Nil
+          waitingRequests = Queue.empty
         }
     }
   }
