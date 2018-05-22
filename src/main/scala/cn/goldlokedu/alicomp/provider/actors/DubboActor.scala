@@ -32,7 +32,7 @@ class DubboActor(dubboHost: String,
   var runningRequestsCount = 0
 
   // 未发送的请求
-  var pendingRequests: Seq[(ActorRef, ByteString)] = Nil
+  var pendingRequests: Queue[(ActorRef, ByteString)] = Queue.empty
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -57,8 +57,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+      //      implicit val ec = context.dispatcher
+      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
@@ -178,7 +178,7 @@ class DubboActor(dubboHost: String,
   }
 
   private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
-    pendingRequests :+= replyTo -> msg
+    pendingRequests = pendingRequests.enqueue(replyTo -> msg)
   }
 
 }

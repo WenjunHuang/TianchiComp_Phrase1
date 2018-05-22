@@ -9,7 +9,6 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Random
 
 class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContext,
                                                     to: Timeout,
