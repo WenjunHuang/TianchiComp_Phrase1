@@ -75,7 +75,7 @@ class DubboActor(dubboHost: String,
       isWriting = false
       trySendNextPending()
     case Received(data) =>
-      val (newBuilder, messages) = dubboMessageBuilder.feed(data)
+      val (newBuilder, messages) = dubboMessageBuilder.feedRaw(data)
       dubboMessageBuilder = newBuilder
       if (messages.nonEmpty) {
         runningRequestsCount -= messages.size
@@ -83,14 +83,13 @@ class DubboActor(dubboHost: String,
 
         // 有可能一次读取就获取了多个回复
         messages.groupBy { msg =>
-          if (msg.isResponse) {
-            runningRequests.remove(msg.requestId)
-          } else {
-            None
+          DubboMessage.extractIsResponse(msg) match {
+            case Some(true) => runningRequests.remove(DubboMessage.extractRequestId(msg).get)
+            case _ => None
           }
         }.foreach {
-          case (Some(replyTo), messages) =>
-            replyTo ! messages
+          case (Some(replyTo), grouped) =>
+            replyTo ! grouped
           case _ =>
         }
       }

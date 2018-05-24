@@ -15,7 +15,6 @@ case class DubboMessage(isRequest: Boolean,
                         body: ByteString) {
   def isResponse: Boolean = !isRequest && !isEvent
 
-
   def toByteString = {
     implicit val bo = ByteOrder.BIG_ENDIAN
     val builder = new ByteStringBuilder()
@@ -68,6 +67,17 @@ object DubboMessage {
       }
       Some(requestId)
     }
+  }
 
+  def extractIsResponse(msg: ByteString): Option[Boolean] = {
+    if (msg.size < 12)
+      None
+    else {
+      val b = msg(3)
+      if ((b & 0x8000) == 0 && (b & 0x20) == 0)
+        Some(true)
+      else
+        Some(false)
+    }
   }
 }

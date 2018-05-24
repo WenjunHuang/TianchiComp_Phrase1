@@ -15,10 +15,8 @@ import scala.collection.mutable
 class ProviderAgentClientActor(providerName: String,
                                providerAgentHost: String,
                                providerAgentPort: Int) extends Actor with ActorLogging {
-
   import ProviderAgentClientActor._
   import context.system
-
 
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
 
@@ -48,7 +46,7 @@ class ProviderAgentClientActor(providerName: String,
 
   def ready: Receive = {
     case Print =>
-      log.info(s"isWriting: ${isWriting},waiting: ${waitingRequests.size}, working: ${workingRequests.size}")
+      log.info(s"isWriting: $isWriting,waiting: ${waitingRequests.size}, working: ${workingRequests.size}")
     case Received(data) =>
       val (newHandler, msgs) = dubboMessageHandler.feed(data)
       dubboMessageHandler = newHandler
@@ -71,7 +69,7 @@ class ProviderAgentClientActor(providerName: String,
   }
 
   @inline
-  def sendPendingRequests() = {
+  def sendPendingRequests(): Unit = {
     (isWriting, waitingRequests.isEmpty) match {
       case (true, _) =>
       case (_, true) =>
