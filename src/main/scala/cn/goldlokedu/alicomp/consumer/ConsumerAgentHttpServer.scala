@@ -54,9 +54,9 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
   //
   //  }
   def run() = {
-    val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
-    serverSource.to(Sink.foreach { connection =>
-      connection.handleWithAsyncHandler(requestHandler, 16)
-    }).run()
+    val serverSource = Http().bindAndHandleAsync(requestHandler,consumerHttpHost, consumerHttpPort)
+//    serverSource.to(Sink.foreach { connection =>
+//      connection.handleWithAsyncHandler(requestHandler)
+//    }).run()
   }
 }
