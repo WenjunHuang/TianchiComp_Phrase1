@@ -6,17 +6,13 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
-import akka.stream.scaladsl.Sink
-import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
-
-import scala.concurrent.{ExecutionContext, Future}
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import akka.http.scaladsl.server.Directives._
+import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse}
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
 class ConsumerAgentHttpServer(consumerHttpHost: String,
@@ -54,9 +50,9 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
   //
   //  }
   def run() = {
-    val serverSource = Http().bind(consumerHttpHost, consumerHttpPort)
-    serverSource.to(Sink.foreach { connection =>
-      connection.handleWithAsyncHandler(requestHandler, 16)
-    }).run()
+    val serverSource = Http().bindAndHandleAsync(requestHandler,consumerHttpHost, consumerHttpPort,parallelism = 256)
+//    serverSource.to(Sink.foreach { connection =>
+//      connection.handleWithAsyncHandler(requestHandler)
+//    }).run()
   }
 }

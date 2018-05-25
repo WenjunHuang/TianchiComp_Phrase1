@@ -13,7 +13,6 @@ import scala.concurrent.duration._
 class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContext,
                                                     to: Timeout,
                                                     logger: LoggingAdapter) extends Actor {
-  //with Stash {
   var providerAgents: mutable.Map[CapacityType.Value, ActorRef] = mutable.Map.empty
 
   import ConsumerAgentActor._
@@ -36,7 +35,6 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
       tryGetProviderAgents
     case ProviderTerminated(cap) =>
       providerAgents.remove(cap)
-
   }
 
   def tryGetProviderAgents = {
@@ -86,7 +84,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
     val cap = roll match {
       case x if (0 to 5) contains x =>
         CapacityType.L
-      case x if (6 to 8) contains x =>
+      case x if (6 to 9) contains x =>
         CapacityType.M
       case 9 =>
         CapacityType.S

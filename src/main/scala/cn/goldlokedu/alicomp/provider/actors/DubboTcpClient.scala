@@ -13,7 +13,7 @@ class DubboTcpClient(connection: ActorRef,
 
   var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
   var isWriting = false
-  var pendingResults: Seq[DubboMessage] = Nil
+  var pendingResults: Seq[ByteString] = Nil
 
   override def receive: Receive = {
     case Received(data) =>
@@ -24,7 +24,7 @@ class DubboTcpClient(connection: ActorRef,
     case DoneWrite =>
       isWriting = false
       trySendBackPendingResults()
-    case msgs: Seq[DubboMessage] =>
+    case msgs: Seq[ByteString] =>
       // dubbo 结果
       pendingResults ++= msgs
       trySendBackPendingResults()
@@ -36,7 +36,7 @@ class DubboTcpClient(connection: ActorRef,
     (isWriting, pendingResults.nonEmpty) match {
       case (false, true) =>
         val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
-          accum ++ msg.toByteString
+          accum ++ msg
         }
         connection ! Write(toSend, DoneWrite)
         pendingResults = Nil

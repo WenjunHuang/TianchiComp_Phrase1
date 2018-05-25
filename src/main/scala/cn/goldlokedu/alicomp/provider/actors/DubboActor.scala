@@ -32,7 +32,7 @@ class DubboActor(dubboHost: String,
   var runningRequestsCount = 0
 
   // 未发送的请求
-  var pendingRequests: Queue[(ActorRef, ByteString)] = Queue.empty
+  var pendingRequests: Seq[(ActorRef, ByteString)] = Nil
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
@@ -57,8 +57,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-      //      implicit val ec = context.dispatcher
-      //      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+            implicit val ec = context.dispatcher
+            context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
@@ -75,7 +75,7 @@ class DubboActor(dubboHost: String,
       isWriting = false
       trySendNextPending()
     case Received(data) =>
-      val (newBuilder, messages) = dubboMessageBuilder.feed(data)
+      val (newBuilder, messages) = dubboMessageBuilder.feedRaw(data)
       dubboMessageBuilder = newBuilder
       if (messages.nonEmpty) {
         runningRequestsCount -= messages.size
@@ -83,14 +83,13 @@ class DubboActor(dubboHost: String,
 
         // 有可能一次读取就获取了多个回复
         messages.groupBy { msg =>
-          if (msg.isResponse) {
-            runningRequests.remove(msg.requestId)
-          } else {
-            None
+          DubboMessage.extractIsResponse(msg) match {
+            case Some(true) => runningRequests.remove(DubboMessage.extractRequestId(msg).get)
+            case _ => None
           }
         }.foreach {
-          case (Some(replyTo), messages) =>
-            replyTo ! messages
+          case (Some(replyTo), grouped) =>
+            replyTo ! grouped
           case _ =>
         }
       }
@@ -178,7 +177,7 @@ class DubboActor(dubboHost: String,
   }
 
   private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
-    pendingRequests = pendingRequests.enqueue(replyTo -> msg)
+    pendingRequests = (replyTo -> msg) +: pendingRequests
   }
 
 }
