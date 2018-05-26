@@ -26,15 +26,19 @@ case class DubboMessageBuilder(first: ByteString) {
         //          accum | (java.lang.Byte.toUnsignedInt(byte._1) << ((3 - byte._2) * 8))
         //        }
 
-        val dataLengthBytes = restData.slice(12, 16)
-        val dataLength = java.lang.Byte.toUnsignedInt(dataLengthBytes(0)) << 24 |
-          java.lang.Byte.toUnsignedInt(dataLengthBytes(1)) << 16 |
-          java.lang.Byte.toUnsignedInt(dataLengthBytes(2)) << 8 |
-          java.lang.Byte.toUnsignedInt(dataLengthBytes(3))
+        val dataLength = java.lang.Byte.toUnsignedInt(restData(12)) << 24 |
+          java.lang.Byte.toUnsignedInt(restData(13)) << 16 |
+          java.lang.Byte.toUnsignedInt(restData(14)) << 8 |
+          java.lang.Byte.toUnsignedInt(restData(16))
+
+//        val dataLengthBytes = restData.slice(12, 16)
+//        val dataLength = java.lang.Byte.toUnsignedInt(dataLengthBytes(0)) << 24 |
+//          java.lang.Byte.toUnsignedInt(dataLengthBytes(1)) << 16 |
+//          java.lang.Byte.toUnsignedInt(dataLengthBytes(2)) << 8 |
+//          java.lang.Byte.toUnsignedInt(dataLengthBytes(3))
 
         // 消息已经完整，开始解析
         if (restData.size >= 16 + dataLength) {
-
           // 内容数据已经有了
           val split = restData.splitAt(16 + dataLength)
           fold(split._2, split._1 +: messages)
