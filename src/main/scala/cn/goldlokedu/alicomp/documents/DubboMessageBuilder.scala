@@ -19,7 +19,8 @@ case class DubboMessageBuilder(first: ByteString) {
   private def extractRaw(data: ByteString): (DubboMessageBuilder, Seq[ByteString]) = {
     @tailrec
     def fold(restData: ByteString, messages: Seq[ByteString]): (ByteString, Seq[ByteString]) = {
-      if (restData.size > 16) {
+      val restSize = restData.size
+      if (restSize > 16) {
         // 16个字节的头部
         //        val header = restData.take(16)
         //        val dataLength = header.slice(12, 16).zipWithIndex.foldLeft(0) { (accum, byte) =>
@@ -38,7 +39,7 @@ case class DubboMessageBuilder(first: ByteString) {
         //          java.lang.Byte.toUnsignedInt(dataLengthBytes(3))
 
         // 消息已经完整，开始解析
-        if (restData.size >= 16 + dataLength) {
+        if (restSize >= 16 + dataLength) {
           // 内容数据已经有了
           val split = restData.splitAt(16 + dataLength)
           fold(split._2, split._1 +: messages)
