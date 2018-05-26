@@ -26,8 +26,8 @@ elif [[ "$1" == "provider-small" ]]; then
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
-       -DDUBBO_CONNECTION_COUNT=3 \
-       -DDUBBO_COUNT_PER_CONNECTION=50 \
+       -DDUBBO_CONNECTION_COUNT=1 \
+       -DDUBBO_COUNT_PER_CONNECTION=200 \
        -DPROVIDER_AGENT_HOST=provider-small \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-medium" ]]; then
@@ -39,8 +39,8 @@ elif [[ "$1" == "provider-medium" ]]; then
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
-       -DDUBBO_CONNECTION_COUNT=3 \
-       -DDUBBO_COUNT_PER_CONNECTION=60 \
+       -DDUBBO_CONNECTION_COUNT=2 \
+       -DDUBBO_COUNT_PER_CONNECTION=100 \
        -DPROVIDER_AGENT_HOST=provider-medium \
        ${AGENT_PATH}
 elif [[ "$1" == "provider-large" ]]; then
