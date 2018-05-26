@@ -81,6 +81,7 @@ class DubboActor(dubboHost: String,
         runningRequestsCount -= messages.size
         trySendNextPending()
 
+        val start = System.currentTimeMillis()
         // 有可能一次读取就获取了多个回复
         messages.groupBy { msg =>
           DubboMessage.extractIsResponse(msg) match {
@@ -92,6 +93,9 @@ class DubboActor(dubboHost: String,
             replyTo ! grouped
           case _ =>
         }
+        val end = System.currentTimeMillis()
+
+        logger.info(s"take ${end - start} ms")
       }
 
     case _: ConnectionClosed =>
