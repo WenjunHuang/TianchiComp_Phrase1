@@ -22,6 +22,7 @@ class DubboActor(dubboHost: String,
 
   var statistics = 0.0
   var completedCount = 0L
+  var largestLatency = 0.0
 
   // Akka IO
   var connection: Option[ActorRef] = None
@@ -74,6 +75,7 @@ class DubboActor(dubboHost: String,
            |pending: ${pendingRequests.size}
            |working: $runningRequestsCount
            |statics: $statistics ms
+           |largest: $largestLatency ms
          """.stripMargin)
     case TrySend =>
       trySendNextPending()
@@ -98,7 +100,8 @@ class DubboActor(dubboHost: String,
         }.foreach {
           case (Some(request), grouped) =>
             val cur = System.nanoTime()
-            val dif = (cur  - request.beginNano) / 1000
+            val dif = (cur - request.beginNano) / 1000
+            largestLatency = Math.max(largestLatency, dif)
             statistics = (statistics * completedCount + dif) / (completedCount + 1)
             completedCount += 1
             request.sender ! grouped
@@ -132,16 +135,16 @@ class DubboActor(dubboHost: String,
       case (true, true, true) =>
         val a = awailableCount
         val (d, l) = msgs.splitAt(a)
-        sendRequestToDubbo(d.map(PendingRequest(replyTo,_,System.nanoTime())))
-        pendingRequests ++= l.map(PendingRequest(replyTo, _,System.nanoTime()))
+        sendRequestToDubbo(d.map(PendingRequest(replyTo, _, System.nanoTime())))
+        pendingRequests ++= l.map(PendingRequest(replyTo, _, System.nanoTime()))
       case (true, false, true) =>
-        pendingRequests ++= msgs.map(PendingRequest(replyTo, _,System.nanoTime()))
+        pendingRequests ++= msgs.map(PendingRequest(replyTo, _, System.nanoTime()))
         val a = awailableCount
         val (d, l) = pendingRequests.splitAt(a)
         sendRequestToDubbo(d)
         pendingRequests = l
       case _ =>
-        pendingRequests ++= msgs.map(PendingRequest(replyTo, _,System.nanoTime()))
+        pendingRequests ++= msgs.map(PendingRequest(replyTo, _, System.nanoTime()))
     }
   }
 
@@ -178,7 +181,7 @@ class DubboActor(dubboHost: String,
 
   private def sendRequestToDubbo(msgs: Seq[PendingRequest]) = {
     val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
-      runningRequests += DubboMessage.extractRequestId(msg.msg).get -> RunningRequest(msg.sender,msg.beginNano)
+      runningRequests += DubboMessage.extractRequestId(msg.msg).get -> RunningRequest(msg.sender, msg.beginNano)
       runningRequestsCount += 1
       accum ++ msg.msg
     }
@@ -189,7 +192,7 @@ class DubboActor(dubboHost: String,
   }
 
   private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
-    pendingRequests = PendingRequest(replyTo,msg,System.nanoTime()) +: pendingRequests
+    pendingRequests = PendingRequest(replyTo, msg, System.nanoTime()) +: pendingRequests
   }
 
 }
@@ -207,6 +210,7 @@ object DubboActor {
   case class FeedNewReceived(data: ByteString)
 
   case class PendingRequest(sender: ActorRef, msg: ByteString, beginNano: Long)
-  case class RunningRequest(sender:ActorRef,beginNano:Long)
+
+  case class RunningRequest(sender: ActorRef, beginNano: Long)
 
 }
