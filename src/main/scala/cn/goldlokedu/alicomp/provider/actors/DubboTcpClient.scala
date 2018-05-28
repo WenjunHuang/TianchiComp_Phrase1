@@ -39,6 +39,7 @@ class DubboTcpClient(connection: ActorRef,
           accum ++ msg
         }
         connection ! Write(toSend, DoneWrite)
+        isWriting = true
         pendingResults = Nil
       case _=>
     }
