@@ -33,7 +33,7 @@ class DubboTcpClient(connection: ActorRef,
   }
 
   def trySendBackPendingResults() = {
-    (isWriting, pendingResults.nonEmpty) match {
+    (isWriting, pendingResults.size >= 10) match {
       case (false, true) =>
         val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
           accum ++ msg
