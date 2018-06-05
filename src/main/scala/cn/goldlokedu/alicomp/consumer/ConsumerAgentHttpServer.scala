@@ -61,7 +61,8 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
         onComplete(request) {
           case Success(result) if result.status == 20=>
             complete(StatusCodes.OK -> String.valueOf(result.result.get))
-          case _=>
+          case any=>
+            println(any)
             complete(StatusCodes.InternalServerError->"")
         }
     }
