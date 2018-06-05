@@ -135,16 +135,16 @@ class DubboActor(dubboHost: String,
       case (true, true, true) =>
         val a = awailableCount
         val (d, l) = msgs.splitAt(a)
-        sendRequestToDubbo(d.map(PendingRequest(replyTo, _, System.nanoTime())))
-        pendingRequests ++= l.map(PendingRequest(replyTo, _, System.nanoTime()))
+        sendRequestToDubbo(d.map(PendingRequest(replyTo, _)))
+        pendingRequests ++= l.map(PendingRequest(replyTo, _))
       case (true, false, true) =>
-        pendingRequests ++= msgs.map(PendingRequest(replyTo, _, System.nanoTime()))
+        pendingRequests ++= msgs.map(PendingRequest(replyTo, _))
         val a = awailableCount
         val (d, l) = pendingRequests.splitAt(a)
         sendRequestToDubbo(d)
         pendingRequests = l
       case _ =>
-        pendingRequests ++= msgs.map(PendingRequest(replyTo, _, System.nanoTime()))
+        pendingRequests ++= msgs.map(PendingRequest(replyTo, _))
     }
   }
 
@@ -181,7 +181,7 @@ class DubboActor(dubboHost: String,
 
   private def sendRequestToDubbo(msgs: Seq[PendingRequest]) = {
     val toSend = msgs.foldLeft(ByteString.empty) { (accum, msg) =>
-      runningRequests += DubboMessage.extractRequestId(msg.msg).get -> RunningRequest(msg.sender, msg.beginNano)
+      runningRequests += DubboMessage.extractRequestId(msg.msg).get -> RunningRequest(msg.sender)
       runningRequestsCount += 1
       accum ++ msg.msg
     }
@@ -192,7 +192,7 @@ class DubboActor(dubboHost: String,
   }
 
   private def pendRequest(replyTo: ActorRef, msg: ByteString) = {
-    pendingRequests = PendingRequest(replyTo, msg, System.nanoTime()) +: pendingRequests
+    pendingRequests = PendingRequest(replyTo, msg) +: pendingRequests
   }
 
 }
@@ -209,8 +209,8 @@ object DubboActor {
 
   case class FeedNewReceived(data: ByteString)
 
-  case class PendingRequest(sender: ActorRef, msg: ByteString, beginNano: Long)
+  case class PendingRequest(sender: ActorRef, msg: ByteString)
 
-  case class RunningRequest(sender: ActorRef, beginNano: Long)
+  case class RunningRequest(sender: ActorRef)
 
 }
