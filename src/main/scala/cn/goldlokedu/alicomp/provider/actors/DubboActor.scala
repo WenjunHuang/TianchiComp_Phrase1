@@ -20,9 +20,9 @@ class DubboActor(dubboHost: String,
   import DubboActor._
   import Tcp._
 
-  var statistics = 0.0
-  var completedCount = 0L
-  var largestLatency = 0.0
+//  var statistics = 0.0
+//  var completedCount = 0L
+//  var largestLatency = 0.0
 
   // Akka IO
   var connection: Option[ActorRef] = None
@@ -60,8 +60,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-//      implicit val ec = context.dispatcher
-//      context.system.scheduler.schedule(3 minutes, 1 second, self, PrintPayload)
+      implicit val ec = context.dispatcher
+      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
@@ -74,8 +74,6 @@ class DubboActor(dubboHost: String,
            |${self.path.name}
            |pending: ${pendingRequests.size}
            |working: $runningRequestsCount
-           |statics: $statistics ms
-           |largest: $largestLatency ms
          """.stripMargin)
     case TrySend =>
       trySendNextPending()
@@ -103,7 +101,7 @@ class DubboActor(dubboHost: String,
 //            val dif = (cur - request.beginNano) / 1000
 //            largestLatency = Math.max(largestLatency, dif)
 //            statistics = (statistics * completedCount + dif) / (completedCount + 1)
-            completedCount += 1
+//            completedCount += 1
             request.sender ! grouped
           case _ =>
         }
