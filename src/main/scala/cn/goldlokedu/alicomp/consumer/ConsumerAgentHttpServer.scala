@@ -56,8 +56,8 @@ class ConsumerAgentHttpServer(consumerHttpHost: String,
           interface = intr,
           method = method,
           parameterTypeString = pts,
-          parameter = param))
-          .mapTo[BenchmarkResponse]
+          parameter = param)).map(_.asInstanceOf[BenchmarkResponse])
+
         onComplete(request) {
           case Success(result) if result.status == 20=>
             complete(StatusCodes.OK -> String.valueOf(result.result.get))
