@@ -24,7 +24,7 @@ class ConsumerAgentActor(etcdClient: => EtcdClient)(implicit ec: ExecutionContex
   override def receive: Receive = ready
 
   def ready: Receive = {
-    case req@BenchmarkRequest(_, _, _, _, _) =>
+    case req@BenchmarkRequest(_, _, _, _, _,_) =>
       selectProviderAgent match {
         case Some(actorRef) =>
           actorRef forward req
