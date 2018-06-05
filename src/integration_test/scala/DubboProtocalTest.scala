@@ -44,30 +44,5 @@ object DubboProtocalTest extends App {
   val router = system.actorOf(Props(new RouterActor))
 
 
-  def routers: Route =
-    (post & formFields('value.as[String])) { value =>
-      val request = BenchmarkRequest(
-        UUID.randomUUID().getMostSignificantBits,
-        "com.alibaba.dubbo.performance.demo.provider.IHelloService",
-        "hash",
-        "Ljava/lang/String;",
-        value)
-      val index = ThreadLocalRandom.current().nextInt(dubboActors.size)
-      val fut = (router ? request).mapTo[BenchmarkResponse]
-      onComplete(fut) {
-        case Success(msg) =>
-          if (msg.status == 20)
-            complete(StatusCodes.OK -> msg.result.get.toString)
-          else {
-            logger.error(s"get error code : ${msg.status}")
-            complete(StatusCodes.InternalServerError)
-          }
-        case Failure(cause) =>
-          //          logger.error(cause,s"server error")
-          complete(StatusCodes.InternalServerError)
-      }
-    }
-
-  Http().bindAndHandle(routers, "0.0.0.0", 8080)
 
 }

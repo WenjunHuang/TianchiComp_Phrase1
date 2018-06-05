@@ -4,11 +4,14 @@ import java.nio.ByteOrder
 
 import akka.util.{ByteString, ByteStringBuilder}
 
+import scala.concurrent.Promise
+
 case class BenchmarkRequest(requestId: Long,
                             interface: String,
                             method: String,
                             parameterTypeString: String,
-                            parameter: String)
+                            parameter: String,
+                            promise:Promise[BenchmarkResponse])
 
 object BenchmarkRequest {
   implicit val bo: ByteOrder = ByteOrder.BIG_ENDIAN

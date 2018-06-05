@@ -10,6 +10,7 @@ import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, Dub
 
 import scala.collection.immutable.Queue
 import scala.collection.mutable
+import scala.concurrent.Promise
 
 
 class ProviderAgentClientActor(providerName: String,
@@ -22,7 +23,7 @@ class ProviderAgentClientActor(providerName: String,
 
   var isWriting = false
   var waitingRequests: Queue[(ActorRef, BenchmarkRequest)] = Queue.empty
-  val workingRequests: mutable.Map[Long, ActorRef] = mutable.Map.empty
+  val workingRequests: mutable.Map[Long, Promise[BenchmarkResponse]] = mutable.Map.empty
   var connection: Option[ActorRef] = None
 
   IO(Tcp) ! Connect(new InetSocketAddress(providerAgentHost, providerAgentPort))
@@ -53,8 +54,8 @@ class ProviderAgentClientActor(providerName: String,
       if (msgs.nonEmpty) {
         msgs.foreach { msg =>
           workingRequests.remove(msg.requestId) match {
-            case Some(actorRef) =>
-              actorRef ! BenchmarkResponse(msg)
+            case Some(promise) =>
+              promise.complete(BenchmarkResponse(msg))
             case _ =>
           }
         }
@@ -75,7 +76,7 @@ class ProviderAgentClientActor(providerName: String,
       case (_, true) =>
       case (false, false) =>
         val toSend = waitingRequests.foldLeft(ByteString.empty) { (accum, msg) =>
-          workingRequests(msg._2.requestId) = msg._1
+          workingRequests(msg._2.requestId) = msg._2.promise
           accum ++ msg._2
         }
         if (toSend.nonEmpty) {
