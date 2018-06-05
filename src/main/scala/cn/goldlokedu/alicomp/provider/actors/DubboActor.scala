@@ -60,8 +60,8 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-      implicit val ec = context.dispatcher
-      context.system.scheduler.schedule(3 minutes, 1 second, self, PrintPayload)
+//      implicit val ec = context.dispatcher
+//      context.system.scheduler.schedule(3 minutes, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
@@ -99,10 +99,10 @@ class DubboActor(dubboHost: String,
           }
         }.foreach {
           case (Some(request), grouped) =>
-            val cur = System.nanoTime()
-            val dif = (cur - request.beginNano) / 1000
-            largestLatency = Math.max(largestLatency, dif)
-            statistics = (statistics * completedCount + dif) / (completedCount + 1)
+//            val cur = System.nanoTime()
+//            val dif = (cur - request.beginNano) / 1000
+//            largestLatency = Math.max(largestLatency, dif)
+//            statistics = (statistics * completedCount + dif) / (completedCount + 1)
             completedCount += 1
             request.sender ! grouped
           case _ =>
