@@ -2,31 +2,34 @@ package cn.goldlokedu.alicomp.provider.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.io.Tcp.{Event, Received, Write}
-import akka.routing.Router
 import akka.util.ByteString
-import cn.goldlokedu.alicomp.documents.{DubboMessage, DubboMessageBuilder}
 
 class DubboTcpClient(connection: ActorRef,
-                     dubboActor: Router) extends Actor with ActorLogging {
+                     dubboActor: ActorRef) extends Actor with ActorLogging {
 
   import DubboTcpClient._
 
-  var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
+  //  var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
   var isWriting = false
-  var pendingResults: Seq[ByteString] = Nil
+  var pendingResults: ByteString = ByteString.empty
+
+  override def preStart(): Unit = {
+    dubboActor ! "ReplyTo"
+  }
 
   override def receive: Receive = {
     case Received(data) =>
-      val it = dubboMessageHandler.feedRaw(data)
-      dubboMessageHandler = it._1
-      if (it._2.nonEmpty)
-        dubboActor.route(it._2, self)
+      //      val it = dubboMessageHandler.feedRaw(data)
+      //      dubboMessageHandler = it._1
+      //      if (it._2.nonEmpty)
+      //        dubboActor.route(it._2, self)
+      dubboActor ! data
     case DoneWrite =>
       isWriting = false
       trySendBackPendingResults()
-    case msgs: Seq[ByteString] =>
+    case msgs: ByteString =>
       // dubbo 结果
-      pendingResults ++= msgs
+      pendingResults = pendingResults ++ msgs
       trySendBackPendingResults()
     case Print =>
       log.info(s"pending: ${pendingResults.size}")
@@ -35,13 +38,13 @@ class DubboTcpClient(connection: ActorRef,
   def trySendBackPendingResults() = {
     (isWriting, pendingResults.nonEmpty) match {
       case (false, true) =>
-        val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
-          accum ++ msg
-        }
-        connection ! Write(toSend, DoneWrite)
+        //        val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
+        //          accum ++ msg
+        //        }
+        connection ! Write(pendingResults, DoneWrite)
         isWriting = true
-        pendingResults = Nil
-      case _=>
+        pendingResults = ByteString.empty
+      case _ =>
     }
   }
 }

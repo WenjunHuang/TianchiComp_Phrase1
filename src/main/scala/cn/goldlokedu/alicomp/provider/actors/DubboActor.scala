@@ -39,6 +39,8 @@ class DubboActor(dubboHost: String,
 
   var dubboMessageBuilder = DubboMessageBuilder(ByteString.empty)
 
+  var replyTo:ActorRef = _
+
   override def preStart(): Unit = {
     self ! Init
   }
@@ -60,14 +62,16 @@ class DubboActor(dubboHost: String,
       connection = Some(sender())
       connection.get ! Register(self)
       // debug
-      implicit val ec = context.dispatcher
-      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
+//      implicit val ec = context.dispatcher
+//      context.system.scheduler.schedule(1 second, 1 second, self, PrintPayload)
       //                  context.system.scheduler.schedule(1 second, 100 milliseconds, self, TrySend)
 
       context become ready
   }
 
   def ready: Receive = {
+    case "ReplyTo" =>
+      replyTo = sender()
     case PrintPayload =>
       logger.info(
         s"""
@@ -77,35 +81,31 @@ class DubboActor(dubboHost: String,
          """.stripMargin)
     case TrySend =>
       trySendNextPending()
-    case msgs: Seq[ByteString] =>
-      trySendRequestToDubbo(sender, msgs)
+    case msgs:ByteString =>
+      trySendRequestToDubbo(sender, Seq(msgs))
     case DoneWrite =>
       isWriting = false
       trySendNextPending()
     case Received(data) =>
-      val (newBuilder, messages) = dubboMessageBuilder.feedRaw(data)
-      dubboMessageBuilder = newBuilder
-      if (messages.nonEmpty) {
-        runningRequestsCount -= messages.size
-        trySendNextPending()
-
-        // 有可能一次读取就获取了多个回复
-        messages.groupBy { msg =>
-          DubboMessage.extractIsResponse(msg) match {
-            case Some(true) => runningRequests.remove(DubboMessage.extractRequestId(msg).get)
-            case _ => None
-          }
-        }.foreach {
-          case (Some(request), grouped) =>
-//            val cur = System.nanoTime()
-//            val dif = (cur - request.beginNano) / 1000
-//            largestLatency = Math.max(largestLatency, dif)
-//            statistics = (statistics * completedCount + dif) / (completedCount + 1)
-//            completedCount += 1
-            request.sender ! grouped
-          case _ =>
-        }
-      }
+//      val (newBuilder, messages) = dubboMessageBuilder.feedRaw(data)
+//      dubboMessageBuilder = newBuilder
+//      if (messages.nonEmpty) {
+//        runningRequestsCount -= messages.size
+//        trySendNextPending()
+//
+//        // 有可能一次读取就获取了多个回复
+//        messages.groupBy { msg =>
+//          DubboMessage.extractIsResponse(msg) match {
+//            case Some(true) => runningRequests.remove(DubboMessage.extractRequestId(msg).get)
+//            case _ => None
+//          }
+//        }.foreach {
+//          case (Some(request), grouped) =>
+//            request.sender ! grouped
+//          case _ =>
+//        }
+//      }
+      replyTo ! data
 
     case _: ConnectionClosed =>
       logger.info("connection closed by dubbo,try reconnect")

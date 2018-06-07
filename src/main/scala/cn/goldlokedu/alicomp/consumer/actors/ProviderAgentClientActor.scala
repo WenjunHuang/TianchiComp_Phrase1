@@ -53,10 +53,12 @@ class ProviderAgentClientActor(providerName: String,
       dubboMessageHandler = newHandler
       if (msgs.nonEmpty) {
         msgs.foreach { msg =>
-          workingRequests.remove(msg.requestId) match {
-            case Some(promise) =>
-              promise.complete(BenchmarkResponse(msg))
-            case _ =>
+          if (!msg.isEvent) {
+            workingRequests.remove(msg.requestId) match {
+              case Some(promise) =>
+                promise.complete(BenchmarkResponse(msg))
+              case _ =>
+            }
           }
         }
       }

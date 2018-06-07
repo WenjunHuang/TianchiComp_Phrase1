@@ -24,15 +24,18 @@ class DubboTcpServer(serverHost: String,
   import Tcp._
   import context.system
 
-  var router = {
-    val routees = (0 until dubboActorCount).map { index =>
-      val r = context
-        .actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)), s"dubbo_$index")
-      context watch r
-      ActorRefRoutee(r)
-    }
-    Router(RoundRobinRoutingLogic(), routees)
-  }
+//  var router = {
+//    val routees = (0 until dubboActorCount).map { index =>
+//      val r = context
+//        .actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)), s"dubbo_$index")
+//      context watch r
+//      ActorRefRoutee(r)
+//    }
+//    Router(RoundRobinRoutingLogic(), routees)
+//  }
+
+  val dubboActor = context
+    .actorOf(Props(new DubboActor(dubboHost, dubboPort, threhold)), s"dubbo")
 
   IO(Tcp) ! Bind(self, new InetSocketAddress(serverHost, 0))
 
@@ -46,7 +49,7 @@ class DubboTcpServer(serverHost: String,
       logger.error(s"can not bind to address")
     case c@Connected(remote, local) =>
       val connection = sender
-      val handler = context.actorOf(Props(new DubboTcpClient(connection, router)))
+      val handler = context.actorOf(Props(new DubboTcpClient(connection, dubboActor)))
       connection ! Register(handler)
   }
 }
