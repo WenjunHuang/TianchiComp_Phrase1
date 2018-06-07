@@ -48,6 +48,5 @@ class DubboTcpServer(serverHost: String,
       val connection = sender
       val handler = context.actorOf(Props(new DubboTcpClient(connection, router)))
       connection ! Register(handler)
-
   }
 }
