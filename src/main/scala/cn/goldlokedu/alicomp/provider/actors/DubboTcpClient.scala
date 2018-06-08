@@ -22,6 +22,7 @@ class DubboTcpClient(connection: ActorRef,
 
   override def receive: Receive = {
     case Received(data) =>
+      println(s"received...")
       dubboActor ! data
     case DoneWrite =>
       isWriting = false
