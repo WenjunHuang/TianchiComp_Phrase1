@@ -1,10 +1,11 @@
 package cn.goldlokedu.alicomp.documents
 
+import java.lang.{Byte => JByte}
 import java.nio.ByteOrder
 
 import akka.util.{ByteString, ByteStringBuilder}
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest.{DubboVersion, RequestVersion}
-import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+import io.netty.buffer.ByteBuf
 
 case class DubboMessage(isRequest: Boolean,
                         is2Way: Boolean,
@@ -59,22 +60,35 @@ case class DubboMessage(isRequest: Boolean,
 }
 
 object DubboMessage {
-  def extractRequestId(msg: ByteString): Option[Long] = {
-    if (msg.size < 12)
+  def extractRequestId(msg: ByteBuf): Option[Long] = {
+    if (msg.readableBytes() < 12)
       None
     else {
-      val requestId = msg.slice(4, 12).zipWithIndex.foldLeft(0L) { (accum, byte) =>
-        accum | (java.lang.Byte.toUnsignedLong(byte._1) << ((7 - byte._2) * 8))
-      }
+      val requestId = JByte.toUnsignedLong(msg.getByte(4)) << 56 |
+        JByte.toUnsignedLong(msg.getByte(5)) << 48 |
+        JByte.toUnsignedLong(msg.getByte(6)) << 40 |
+        JByte.toUnsignedLong(msg.getByte(7)) << 32 |
+        JByte.toUnsignedLong(msg.getByte(8)) << 24 |
+        JByte.toUnsignedLong(msg.getByte(9)) << 16 |
+        JByte.toUnsignedLong(msg.getByte(10)) << 8 |
+        JByte.toUnsignedLong(msg.getByte(11))
       Some(requestId)
     }
   }
 
-  def extractIsResponse(msg: ByteString): Option[Boolean] = {
-    if (msg.size < 12)
+  def extractStatus(msg:ByteBuf):Option[Short] = {
+    if (msg.readableBytes() < 12)
       None
     else {
-      val b = msg(3)
+
+    }
+  }
+
+  def extractIsResponse(msg: ByteBuf): Option[Boolean] = {
+    if (msg.readableBytes() < 12)
+      None
+    else {
+      val b = msg.getByte(3)
       if ((b & 0x8000) == 0 && (b & 0x20) == 0)
         Some(true)
       else

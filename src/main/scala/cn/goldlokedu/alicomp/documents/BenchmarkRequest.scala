@@ -11,8 +11,7 @@ case class BenchmarkRequest(requestId: Long,
                             interface: String,
                             method: String,
                             parameterTypeString: String,
-                            parameter: String,
-                            promise: Promise[BenchmarkResponse])
+                            parameter: String)
 
 object BenchmarkRequest {
   implicit val bo: ByteOrder = ByteOrder.BIG_ENDIAN
@@ -35,7 +34,10 @@ object BenchmarkRequest {
   }
 
   def toDubboRequestByteBuf(obj: BenchmarkRequest)(implicit alloc: ByteBufAllocator): ByteBuf = {
-    toDubboRequest(obj).asByteBuffer
+    val bb = toDubboRequest(obj).asByteBuffer
+    val byteBuf = alloc.buffer(bb.limit())
+    byteBuf.writeBytes(bb)
+    byteBuf
   }
 
   def makeDubboRequest(requestId: Long,

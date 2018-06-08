@@ -1,10 +1,14 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
-import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
+import java.util.UUID
+
+import cn.goldlokedu.alicomp.documents.BenchmarkRequest
+import io.netty.buffer.ByteBuf
+import io.netty.channel.{Channel, ChannelHandlerContext, SimpleChannelInboundHandler}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostRequestDecoder}
 
-class ConsumerHttpHandler(sender: ()) extends SimpleChannelInboundHandler[FullHttpRequest] {
+class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends SimpleChannelInboundHandler[FullHttpRequest] {
   override def channelRead0(ctx: ChannelHandlerContext, msg: FullHttpRequest): Unit = {
     msg.method match {
       case HttpMethod.POST =>
@@ -14,6 +18,17 @@ class ConsumerHttpHandler(sender: ()) extends SimpleChannelInboundHandler[FullHt
         val pts = decoder.getBodyHttpData("parameterTypesString").asInstanceOf[HttpData].getString
         val param = decoder.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
         decoder.destroy()
+
+        val requestId = UUID.randomUUID().getLeastSignificantBits
+        val byteBuf = BenchmarkRequest.toDubboRequestByteBuf(BenchmarkRequest(
+          requestId = requestId,
+          interface = interface,
+          method = method,
+          parameterTypeString = pts,
+          parameter = param
+        ))(ctx.alloc())
+
+        sender(byteBuf, requestId, this)
       case _ =>
         ctx.close()
     }
