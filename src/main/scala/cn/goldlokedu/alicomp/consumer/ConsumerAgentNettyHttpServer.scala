@@ -57,12 +57,12 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   }
 
   private def providerAgentResponse(byteBuf: ByteBuf): Unit = {
+    println(s"replys")
     serverChannel.eventLoop().execute(() => {
       val result = messageBuilder.feedRaw(byteBuf)
       messageBuilder = result._1
       val msgs = result._2
       if (msgs.nonEmpty) {
-        println(s"replys: ${msgs.size}")
         msgs.foreach { b =>
           for {
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
@@ -109,7 +109,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
               }
               val ch = providerAgents(cap)
               ch.writeAndFlush(byteBuf)
-              println(s"send $requestId")
               workingRequests(requestId) = channel
             })
           }))
