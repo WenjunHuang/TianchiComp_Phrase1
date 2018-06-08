@@ -32,6 +32,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   private def connectProviderAgents() = {
     etcdClient.providers()
       .map { ras =>
+        println(ras)
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           val b = new Bootstrap
