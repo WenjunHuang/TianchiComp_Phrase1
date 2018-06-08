@@ -1,28 +1,27 @@
 package cn.goldlokedu.alicomp.provider.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.event.LoggingAdapter
 import akka.io.Tcp.{Event, Received, Write}
 import akka.util.ByteString
 
 class DubboTcpClient(connection: ActorRef,
-                     dubboActor: ActorRef) extends Actor with ActorLogging {
-
+                     dubboHost:String,
+                     dubboPort:Int)(implicit log:LoggingAdapter) extends Actor with ActorLogging {
   import DubboTcpClient._
 
-  //  var dubboMessageHandler = DubboMessageBuilder(ByteString.empty)
   var isWriting = false
   var pendingResults: ByteString = ByteString.empty
+  var dubboActor:ActorRef = _
 
   override def preStart(): Unit = {
+    dubboActor = context
+      .actorOf(Props(new DubboActor(dubboHost, dubboPort)), s"dubbo")
     dubboActor ! "ReplyTo"
   }
 
   override def receive: Receive = {
     case Received(data) =>
-      //      val it = dubboMessageHandler.feedRaw(data)
-      //      dubboMessageHandler = it._1
-      //      if (it._2.nonEmpty)
-      //        dubboActor.route(it._2, self)
       dubboActor ! data
     case DoneWrite =>
       isWriting = false
@@ -38,9 +37,6 @@ class DubboTcpClient(connection: ActorRef,
   def trySendBackPendingResults() = {
     (isWriting, pendingResults.nonEmpty) match {
       case (false, true) =>
-        //        val toSend = pendingResults.foldLeft(ByteString.empty) { (accum, msg) =>
-        //          accum ++ msg
-        //        }
         connection ! Write(pendingResults, DoneWrite)
         isWriting = true
         pendingResults = ByteString.empty

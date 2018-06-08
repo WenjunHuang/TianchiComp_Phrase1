@@ -30,7 +30,7 @@ object DubboProtocalTest extends App {
 
 
   val dubboActors = Vector(
-    system.actorOf(Props(new DubboActor(host1, port1, 100))))
+    system.actorOf(Props(new DubboActor(host1, port1))))
 
   class RouterActor extends Actor {
     val router = Router(RoundRobinRoutingLogic(), dubboActors.map(ActorRefRoutee(_)))
