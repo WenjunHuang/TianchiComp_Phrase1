@@ -62,6 +62,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       messageBuilder = result._1
       val msgs = result._2
       if (msgs.nonEmpty) {
+        println(s"replys: ${msgs.size}")
         msgs.foreach { b =>
           for {
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
@@ -73,7 +74,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
               case None =>
             }
           }
-
         }
       }
     })
