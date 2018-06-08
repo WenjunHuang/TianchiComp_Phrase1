@@ -10,7 +10,7 @@ import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.{ByteBuf, PooledByteBufAllocator}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
 import io.netty.channel.{Channel, ChannelFuture, ChannelInitializer, ChannelOption}
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
@@ -38,7 +38,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           println(s"connecting $agent")
           val b = new Bootstrap
           b.group(bossGroup)
-            .channel(classOf[NioServerSocketChannel])
+            .channel(classOf[NioSocketChannel])
             .handler(new ProviderAgentHandler(providerAgentResponse))
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
