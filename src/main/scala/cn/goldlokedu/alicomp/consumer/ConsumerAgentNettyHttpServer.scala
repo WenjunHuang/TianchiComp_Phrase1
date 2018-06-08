@@ -68,8 +68,10 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
             requestId <- DubboMessage.extractRequestId(b)
           } {
+            println(s"$requestId")
             workingRequests.remove(requestId) match {
               case Some(channel) =>
+                println("write back")
                 channel.writeAndFlush(BenchmarkResponse(b))
               case None =>
             }
