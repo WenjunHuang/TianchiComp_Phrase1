@@ -109,6 +109,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
               }
               val ch = providerAgents(cap)
               ch.writeAndFlush(byteBuf)
+              println(s"send $requestId")
               workingRequests(requestId) = channel
             })
           }))
