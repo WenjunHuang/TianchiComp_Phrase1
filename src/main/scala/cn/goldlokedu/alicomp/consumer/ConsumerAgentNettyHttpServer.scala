@@ -39,9 +39,14 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .handler(new ProviderAgentHandler(providerAgentResponse))
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
-              serverChannel.eventLoop().execute(() => {
-                providerAgents = providerAgents + (agent.cap -> future.channel())
-              })
+              if (future.isSuccess) {
+                println(s"connected $agent")
+                serverChannel.eventLoop().execute(() => {
+                  providerAgents = providerAgents + (agent.cap -> future.channel())
+                })
+              } else {
+                future.cause().printStackTrace()
+              }
             }
         }
       }
