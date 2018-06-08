@@ -30,7 +30,7 @@ class DubboTcpServer(serverHost: String,
     case b@Bound(localAddress) =>
       logger.info(s"bound to ${localAddress.toString}")
       context.parent ! b
-      etcdClient.addProvider(RegisteredAgent(cap, name, localAddress.getHostName, localAddress.getPort))
+      etcdClient.addProvider(RegisteredAgent(cap, name, localAddress.getHostString, localAddress.getPort))
         .onComplete(_ => etcdClient.shutdown())
     case CommandFailed(_: Bind) =>
       logger.error(s"can not bind to address")
