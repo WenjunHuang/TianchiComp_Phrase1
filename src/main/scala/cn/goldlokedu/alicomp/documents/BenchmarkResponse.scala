@@ -17,7 +17,7 @@ object BenchmarkResponse {
     // 头两个字节是"1\n",最后一个字节是"\n",todo 如果是windows，那么是\n\r
     message.readerIndex(message.readerIndex() + DubboMessage.HeaderSize + 2)
     message.writerIndex(message.writerIndex() - 1)
-    val result = if (status == 20) {
+    val result = if (status.get == 20) {
       if (message.getByte(message.readerIndex()) == 45) {
         // 负数
         message.readByte()
