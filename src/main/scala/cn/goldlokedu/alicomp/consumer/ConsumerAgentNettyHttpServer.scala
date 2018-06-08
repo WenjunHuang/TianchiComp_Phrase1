@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
-import cn.goldlokedu.alicomp.documents.{CapacityType, DubboMessage, DubboMessageBuilder}
+import cn.goldlokedu.alicomp.documents.{BenchmarkResponse, CapacityType, DubboMessage, DubboMessageBuilder}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.{ByteBuf, PooledByteBufAllocator}
@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits._
 
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
@@ -47,20 +48,21 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def providerAgentResponse(byteBuf: ByteBuf) = {
-    serverChannel.eventLoop().execute(()=> {
+  private def providerAgentResponse(byteBuf: ByteBuf): Unit = {
+    serverChannel.eventLoop().execute(() => {
       val result = messageBuilder.feedRaw(byteBuf)
       messageBuilder = result._1
       val msgs = result._2
-      if (msgs.size > 0) {
-        msgs.foreach{b=>
+      if (msgs.nonEmpty) {
+        msgs.foreach { b =>
           for {
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
             requestId <- DubboMessage.extractRequestId(b)
           } {
             workingRequests.remove(requestId) match {
               case Some(channel) =>
-                channel.write()
+                channel.writeAndFlush(BenchmarkResponse(b))
+              case None =>
             }
           }
 

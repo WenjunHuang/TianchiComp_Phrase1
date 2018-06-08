@@ -1,9 +1,7 @@
 package cn.goldlokedu.alicomp
 
 import akka.actor.Props
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import cn.goldlokedu.alicomp.consumer.{ConsumerAgentHttpServer, ConsumerAgentNettyHttpServer}
-import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
+import cn.goldlokedu.alicomp.consumer.ConsumerAgentNettyHttpServer
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.DubboTcpServer
 import com.typesafe.config.ConfigFactory

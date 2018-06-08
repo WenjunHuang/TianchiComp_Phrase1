@@ -28,7 +28,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
           parameter = param
         ))(ctx.alloc())
 
-        sender(byteBuf, requestId, this)
+        sender(byteBuf, requestId, ctx.channel())
       case _ =>
         ctx.close()
     }

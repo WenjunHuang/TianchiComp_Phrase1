@@ -1,36 +1,55 @@
 package cn.goldlokedu.alicomp.documents
 
-import scala.util.Try
+import java.nio.charset.StandardCharsets
+
+import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.handler.codec.http.{DefaultFullHttpResponse, FullHttpResponse, HttpResponseStatus, HttpVersion}
+import io.netty.util.ReferenceCountUtil
 
 case class BenchmarkResponse(requestId: Long,
                              status: Int,
                              result: Option[Int])
 
 object BenchmarkResponse {
-  def makeHttpResponse()
-  def apply(message: DubboMessage): Try[BenchmarkResponse] = {
-    Try {
-      // 测试的结果是个32位整数值，但是dubbo用fastjson编码后得出的是一个字符串，例如 9900，结果是"1\n9900\n"字符串
-      val raw = message.body.drop(2).dropRight(1) // 头两个字节是"1\n",最后一个字节是"\n",todo 如果是windows，那么是\n\r
-      val status = message.status.toInt
-      var result: Option[Int] = None
-
-      if (status == 20) {
-        if (raw.head == 45){
-          // 负数
-          val r = raw.drop(1).foldLeft(0) { (accum, it) =>
-            accum * 10 + (it - 48) // 数字的ascii码-48=数字值
-          }
-          result = Some(-r)
-        }else {
-          // 正数
-          result = Some(raw.foldLeft(0) { (accum, it) =>
-            accum * 10 + (it - 48) // 数字的ascii码-48=数字值
-          })
-        }
+  def apply(message: ByteBuf): FullHttpResponse = {
+    // 测试的结果是个32位整数值，但是dubbo用fastjson编码后得出的是一个字符串，例如 9900，结果是"1\n9900\n"字符串
+    val status = DubboMessage.extractStatus(message)
+    // 头两个字节是"1\n",最后一个字节是"\n",todo 如果是windows，那么是\n\r
+    message.readerIndex(message.readerIndex() + DubboMessage.HeaderSize + 2)
+    message.writerIndex(message.writerIndex() - 1)
+    val result = if (status == 20) {
+      if (message.getByte(message.readerIndex()) == 45) {
+        // 负数
+        message.readByte()
+        var accum = 0
+        message.forEachByte((b: Byte) => {
+          accum = accum * 10 + (b - 48) // 数字的ascii码-48=数字值
+          true
+        })
+        Some(-accum)
+      } else {
+        // 正数
+        var accum = 0
+        message.forEachByte((b: Byte) => {
+          accum = accum * 10 + (b - 48) // 数字的ascii码-48=数字值
+          true
+        })
+        Some(accum)
       }
-      BenchmarkResponse(message.requestId, status, result)
+    } else
+      None
+
+    val response = result match {
+      case None =>
+        new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR)
+      case Some(value) =>
+        new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+          HttpResponseStatus.OK,
+          Unpooled.copiedBuffer(String.valueOf(value), StandardCharsets.UTF_8))
     }
+
+    ReferenceCountUtil.release(message)
+    response
   }
 }
 

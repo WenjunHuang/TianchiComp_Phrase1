@@ -60,8 +60,9 @@ case class DubboMessage(isRequest: Boolean,
 }
 
 object DubboMessage {
+  val HeaderSize = 12
   def extractRequestId(msg: ByteBuf): Option[Long] = {
-    if (msg.readableBytes() < 12)
+    if (msg.readableBytes() < HeaderSize)
       None
     else {
       val requestId = JByte.toUnsignedLong(msg.getByte(4)) << 56 |
@@ -76,16 +77,17 @@ object DubboMessage {
     }
   }
 
-  def extractStatus(msg:ByteBuf):Option[Short] = {
-    if (msg.readableBytes() < 12)
+  def extractStatus(msg: ByteBuf): Option[Byte] = {
+    if (msg.readableBytes() < HeaderSize)
       None
     else {
-
+      val status = msg.getByte(3)
+      Some(status)
     }
   }
 
   def extractIsResponse(msg: ByteBuf): Option[Boolean] = {
-    if (msg.readableBytes() < 12)
+    if (msg.readableBytes() < HeaderSize)
       None
     else {
       val b = msg.getByte(3)
