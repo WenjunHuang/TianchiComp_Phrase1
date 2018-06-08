@@ -3,12 +3,10 @@ package cn.goldlokedu.alicomp.provider.actors
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import akka.event.LoggingAdapter
 import akka.io.Tcp.Event
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class DubboActor(dubboHost: String,
@@ -55,7 +53,7 @@ class DubboActor(dubboHost: String,
     case TrySend =>
       trySendNextPending()
     case msgs: ByteString =>
-      trySendRequestToDubbo(sender, msgs)
+      trySendRequestToDubbo(msgs)
     case DoneWrite =>
       isWriting = false
       trySendNextPending()
@@ -81,7 +79,7 @@ class DubboActor(dubboHost: String,
     }
   }
 
-  private def trySendRequestToDubbo(replyTo: ActorRef, msg: ByteString): Unit = {
+  private def trySendRequestToDubbo(msg: ByteString): Unit = {
     (noPending, notWriting) match {
       case (true, true) =>
         sendRequestToDubbo(msg)
