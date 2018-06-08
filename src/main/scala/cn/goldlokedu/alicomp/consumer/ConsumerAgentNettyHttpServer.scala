@@ -35,8 +35,10 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         println(ras)
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
+          println(s"connecting $agent")
           val b = new Bootstrap
           b.group(bossGroup)
+            .channel(classOf[NioServerSocketChannel])
             .handler(new ProviderAgentHandler(providerAgentResponse))
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
