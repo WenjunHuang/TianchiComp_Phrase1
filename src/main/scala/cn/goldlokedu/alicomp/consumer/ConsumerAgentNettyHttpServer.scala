@@ -87,7 +87,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
-          pipeline.addLast(new LoggingHandler())
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
