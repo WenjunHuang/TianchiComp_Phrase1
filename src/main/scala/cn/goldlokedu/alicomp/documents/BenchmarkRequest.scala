@@ -3,6 +3,7 @@ package cn.goldlokedu.alicomp.documents
 import java.nio.ByteOrder
 
 import akka.util.{ByteString, ByteStringBuilder}
+import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
 import scala.concurrent.Promise
 
@@ -11,7 +12,7 @@ case class BenchmarkRequest(requestId: Long,
                             method: String,
                             parameterTypeString: String,
                             parameter: String,
-                            promise:Promise[BenchmarkResponse])
+                            promise: Promise[BenchmarkResponse])
 
 object BenchmarkRequest {
   implicit val bo: ByteOrder = ByteOrder.BIG_ENDIAN
@@ -31,6 +32,10 @@ object BenchmarkRequest {
     builder.putInt(size)
     builder.append(body)
     builder.result()
+  }
+
+  def toDubboRequestByteBuf(obj: BenchmarkRequest)(implicit alloc: ByteBufAllocator): ByteBuf = {
+    toDubboRequest(obj).asByteBuffer
   }
 
   def makeDubboRequest(requestId: Long,

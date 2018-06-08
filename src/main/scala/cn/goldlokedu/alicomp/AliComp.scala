@@ -2,7 +2,7 @@ package cn.goldlokedu.alicomp
 
 import akka.actor.Props
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import cn.goldlokedu.alicomp.consumer.ConsumerAgentHttpServer
+import cn.goldlokedu.alicomp.consumer.{ConsumerAgentHttpServer, ConsumerAgentNettyHttpServer}
 import cn.goldlokedu.alicomp.consumer.actors.ConsumerAgentActor
 import cn.goldlokedu.alicomp.documents.CapacityType
 import cn.goldlokedu.alicomp.provider.actors.DubboTcpServer
@@ -28,9 +28,10 @@ trait AliComp extends Actors
   def runConsumerAgent(name: String) = {
     logger.info(s"run as lowlevel $name")
 
-    implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
-    val actor = system.actorOf(Props(new ConsumerAgentActor(etcdClient)), name)
-    val server = new ConsumerAgentHttpServer(consumerHttpHost,consumerHttpPort,actor)
+//    implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
+//    val actor = system.actorOf(Props(new ConsumerAgentActor(etcdClient)), name)
+//    val server = new ConsumerAgentHttpServer(consumerHttpHost,consumerHttpPort,actor)
+    val server = new ConsumerAgentNettyHttpServer(etcdClient,consumerHttpHost,consumerHttpPort)
     server.run()
   }
 

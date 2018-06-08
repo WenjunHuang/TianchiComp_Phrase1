@@ -4,6 +4,7 @@ import java.nio.ByteOrder
 
 import akka.util.{ByteString, ByteStringBuilder}
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest.{DubboVersion, RequestVersion}
+import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
 case class DubboMessage(isRequest: Boolean,
                         is2Way: Boolean,
