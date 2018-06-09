@@ -20,13 +20,13 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
         decoder.destroy()
 
         val requestId = UUID.randomUUID().getLeastSignificantBits
-        val byteBuf = BenchmarkRequest.toDubboRequestByteBuf(BenchmarkRequest(
+        val byteBuf = BenchmarkRequest.makeDubboRequest(
           requestId = requestId,
           interface = interface,
           method = method,
           parameterTypeString = pts,
           parameter = param
-        ))(ctx.alloc())
+        )(ctx.alloc())
 
         sender(byteBuf, requestId, ctx.channel())
       case _ =>

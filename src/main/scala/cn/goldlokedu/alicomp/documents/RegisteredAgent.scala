@@ -2,7 +2,7 @@ package cn.goldlokedu.alicomp.documents
 
 import cn.goldlokedu.alicomp.documents.CapacityType.CapacityType
 import cn.goldlokedu.alicomp.util.json.EnumJsonConverter
-import cn.goldlokedu.alicomp.util.json.ServiceProtocol._
+import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
 object CapacityType extends Enumeration {
@@ -18,7 +18,6 @@ object CapacityType extends Enumeration {
   *
   * @param cap       容量类型
   * @param agentName 代理名字， 必须唯一
-  * @param address   代理的akka ref 地址
   */
 case class RegisteredAgent(cap: CapacityType,
                            agentName: String,

@@ -2,10 +2,7 @@ package cn.goldlokedu.alicomp.documents
 
 import java.nio.ByteOrder
 
-import akka.util.{ByteString, ByteStringBuilder}
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
-
-import scala.concurrent.Promise
 
 case class BenchmarkRequest(requestId: Long,
                             interface: String,
@@ -20,43 +17,21 @@ object BenchmarkRequest {
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
 
+
   @inline
-  implicit def toDubboRequest(obj: BenchmarkRequest): ByteString = {
-    val builder = ByteString.newBuilder
-
-    createDubboRequestHeader(builder, obj.requestId)
-    val body = createDubboRequestBody(obj.interface, obj.method, obj.parameterTypeString, obj.parameter)
-
-    val size = body.size
-    builder.putInt(size)
-    builder.append(body)
-    builder.result()
-  }
-
-  def toDubboRequestByteBuf(obj: BenchmarkRequest)(implicit alloc: ByteBufAllocator): ByteBuf = {
-    val bb = toDubboRequest(obj).asByteBuffer
-    val byteBuf = alloc.buffer(bb.limit())
-    byteBuf.writeBytes(bb)
-    byteBuf
-  }
-
   def makeDubboRequest(requestId: Long,
                        interface: String,
                        method: String,
                        parameterTypeString: String,
-                       parameter: String): ByteString = {
-    val builder = ByteString.newBuilder
+                       parameter: String)(implicit alloc: ByteBufAllocator): ByteBuf = {
+    val builder = alloc.buffer(128)
     createDubboRequestHeader(builder, requestId)
-    val body = createDubboRequestBody(interface, method, parameterTypeString, parameter)
-
-    builder.putInt(body.size)
-    builder.append(body)
-    builder.result()
+    createDubboRequestBody(interface, method, parameterTypeString, parameter, builder)
+    builder
   }
 
   @inline
-  private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String): ByteString = {
-    val bodyBuilder = ByteString.newBuilder
+  private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String, byteBuf: ByteBuf) = {
     val body = Seq(DubboVersion, // dubbo version
       s""""${interface}"""", // service name
       RequestVersion, // service version
@@ -65,18 +40,19 @@ object BenchmarkRequest {
       s""""${parameter}"""", // method arguments
       s"{}"
     ).mkString("\n").getBytes("UTF-8")
-    bodyBuilder.putBytes(body).result()
+    byteBuf.writeInt(body.size)
+    byteBuf.writeBytes(body)
   }
 
   @inline
-  private def createDubboRequestHeader(builder: ByteStringBuilder, requestId: Long) = {
+  private def createDubboRequestHeader(builder: ByteBuf, requestId: Long) = {
     // magic
     val magic = 0xdabb
     //req + 2way + event + serialization id + status
     val req = 0xc600
-    builder.putShort(magic)
-    builder.putShort(req)
-    builder.putLong(requestId)
+    builder.writeShort(magic)
+    builder.writeShort(req)
+    builder.writeLong(requestId)
   }
 }
 

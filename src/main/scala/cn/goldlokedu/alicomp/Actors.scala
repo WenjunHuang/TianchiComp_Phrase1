@@ -1,28 +1,16 @@
 package cn.goldlokedu.alicomp
 
 
-import akka.actor.ActorSystem
-import akka.event.LoggingAdapter
-import akka.util.Timeout
 import cn.goldlokedu.alicomp.etcd.EtcdClient
+import org.slf4j._
+import scala.concurrent.ExecutionContext.Implicits._
 
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration._
-
-trait AkkaInfrastructure {
+trait Infrastructure {
   this: Configuration with SystemConfiguration ⇒
 
-  implicit lazy val system: ActorSystem = ActorSystem("AliComp", config)
-  implicit lazy val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit lazy val logger: LoggingAdapter = system.log
+  implicit lazy val etcdClient: EtcdClient = new EtcdClient(etcdHost, etcdPort)
 
-  implicit def etcdClient: EtcdClient = new EtcdClient(etcdHost, etcdPort)
+  implicit lazy val logger = LoggerFactory.getLogger("cn.goldlokedu.alicomp")
 
-  implicit lazy val timeout: Timeout = Timeout(10 seconds)
-
-  sys.addShutdownHook(system.terminate())
 }
 
-trait Actors {
-  this: AkkaInfrastructure =>
-}
