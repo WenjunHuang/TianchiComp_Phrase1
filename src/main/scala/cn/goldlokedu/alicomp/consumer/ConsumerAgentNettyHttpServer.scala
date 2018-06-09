@@ -36,6 +36,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           println(s"connecting $agent")
           val b = new Bootstrap
           b.group(bossGroup)
+            .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
+            .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
+            .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
             .channel(classOf[NioSocketChannel])
             .handler(new ProviderAgentHandler(providerAgentResponse))
             .connect(new InetSocketAddress(agent.host, agent.port))
@@ -80,6 +83,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .channel(classOf[NioServerSocketChannel])
       .handler(new LoggingHandler(LogLevel.INFO))
       .childOption(ChannelOption.ALLOCATOR, alloc)
+      .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
+      .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
