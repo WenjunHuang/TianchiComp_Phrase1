@@ -21,12 +21,14 @@ object Settings {
   }
 
   val dependencies = Def.setting(Seq(
+    "io.netty" % "netty-all" % versions.nettyVersion,
     "com.typesafe.akka" %% "akka-actor" % versions.akkaVersion,
     "com.typesafe.akka" %% "akka-remote" % versions.akkaVersion,
     "com.typesafe.akka" %% "akka-http" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
-    "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
-    "io.netty" % "netty-all" % versions.nettyVersion,
+    "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion excludeAll(
+      ExclusionRule(organization = "io.netty")
+    ),
 
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
