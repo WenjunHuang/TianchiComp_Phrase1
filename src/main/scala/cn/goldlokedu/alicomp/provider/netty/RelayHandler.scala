@@ -6,12 +6,12 @@ import io.netty.util.ReferenceCountUtil
 
 class RelayHandler(relayChannel: Channel) extends ChannelInboundHandlerAdapter {
   override def channelActive(ctx: ChannelHandlerContext): Unit = {
-    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER)
+    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER, ctx.voidPromise())
   }
 
   override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
     if (relayChannel.isActive)
-      relayChannel.writeAndFlush(msg)
+      relayChannel.writeAndFlush(msg, relayChannel.voidPromise())
     else
       ReferenceCountUtil.release(msg)
   }

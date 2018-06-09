@@ -35,7 +35,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           val b = new Bootstrap
-          b.group(bossGroup)
+          b.group(workerGroup)
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
@@ -67,7 +67,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         } {
           workingRequests.remove(requestId) match {
             case Some(channel) =>
-              channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b))
+              channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b), channel.voidPromise())
             case None =>
           }
         }
@@ -104,7 +104,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                   CapacityType.L
               }
               val ch = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
-              ch.writeAndFlush(byteBuf)
+              ch.writeAndFlush(byteBuf,ch.voidPromise())
               workingRequests(requestId) = channel
             })
           }))
