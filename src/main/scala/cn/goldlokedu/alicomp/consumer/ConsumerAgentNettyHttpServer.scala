@@ -38,6 +38,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.RCVBUF_ALLOCATOR,AdaptiveRecvByteBufAllocator.DEFAULT)
+            .option(ChannelOption.ALLOCATOR,alloc)
             .channel(classOf[NioSocketChannel])
             .handler(new ProviderAgentHandler)
             .connect(new InetSocketAddress(agent.host, agent.port))

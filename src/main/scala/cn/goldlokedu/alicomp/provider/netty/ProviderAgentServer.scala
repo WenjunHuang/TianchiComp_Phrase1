@@ -6,7 +6,8 @@ import java.net.{InetSocketAddress, SocketAddress}
 import cn.goldlokedu.alicomp.documents.{CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelInitializer
+import io.netty.buffer.PooledByteBufAllocator
+import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -20,12 +21,16 @@ class ProviderAgentServer(serverHost: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
   val bossGroup = new NioEventLoopGroup(1)
+  implicit val alloc = PooledByteBufAllocator.DEFAULT
   //  val workerGroup = new NioEventLoopGroup(1)
 
   def run(): Unit = {
     val b = new ServerBootstrap()
       .channel(classOf[NioServerSocketChannel])
       .group(bossGroup)
+      .option(ChannelOption.ALLOCATOR, alloc)
+      .childOption(ChannelOption.ALLOCATOR,alloc)
+      .childOption(ChannelOption.RCVBUF_ALLOCATOR,AdaptiveRecvByteBufAllocator.DEFAULT)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
