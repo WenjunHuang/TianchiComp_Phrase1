@@ -21,8 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = new NioEventLoopGroup(1)
-  val workerGroup = new NioEventLoopGroup(1)
+  val group = new NioEventLoopGroup(2)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
@@ -34,7 +33,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           val b = new Bootstrap
-          b.group(workerGroup)
+          b.group(group)
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
@@ -63,7 +62,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   def run() = {
     val bootstrap = new ServerBootstrap()
     bootstrap.option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-    bootstrap.group(bossGroup, workerGroup)
+    bootstrap.group(group)
       .option(ChannelOption.ALLOCATOR, alloc)
       .channel(classOf[NioServerSocketChannel])
       .handler(new LoggingHandler(LogLevel.INFO))
@@ -98,8 +97,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
     connectProviderAgents()
     serverChannel.closeFuture().sync()
-    bossGroup.shutdownGracefully()
-    workerGroup.shutdownGracefully()
+    group.shutdownGracefully()
   }
 
 }
