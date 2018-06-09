@@ -4,14 +4,14 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
-import cn.goldlokedu.alicomp.documents.{BenchmarkResponse, CapacityType, DubboMessage, DubboMessageBuilder}
+import cn.goldlokedu.alicomp.documents._
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
-import io.netty.buffer.{ByteBuf, PooledByteBufAllocator}
+import io.netty.buffer.PooledByteBufAllocator
+import io.netty.channel._
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
-import io.netty.channel._
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -24,8 +24,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val bossGroup = new NioEventLoopGroup(1)
   val workerGroup = new NioEventLoopGroup(1)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
-  var providerAgents: Map[CapacityType.Value, Channel] = Map.empty
-  val workingRequests: mutable.Map[Long, Channel] = mutable.Map.empty
+  var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
 
   private def connectProviderAgents() = {
@@ -40,13 +39,14 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
             .channel(classOf[NioSocketChannel])
-            .handler(new ProviderAgentHandler(providerAgentResponse))
+            .handler(new ProviderAgentHandler)
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
               if (future.isSuccess) {
                 println(s"connected $agent")
+                val ch = future.channel()
                 serverChannel.eventLoop().execute(() => {
-                  providerAgents = providerAgents + (agent.cap -> future.channel())
+                  providerAgents(agent.cap) = ch
                   println(providerAgents)
                 })
               } else {
@@ -56,23 +56,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         }
       }
       .onComplete(_ => etcdClient.shutdown())
-  }
-
-  private def providerAgentResponse(msgs: Seq[ByteBuf]): Unit = {
-    serverChannel.eventLoop().execute(() => {
-      msgs.foreach { b =>
-        for {
-          isResponse <- DubboMessage.extractIsResponse(b) if isResponse
-          requestId <- DubboMessage.extractRequestId(b)
-        } {
-          workingRequests.remove(requestId) match {
-            case Some(channel) =>
-              channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b), channel.voidPromise())
-            case None =>
-          }
-        }
-      }
-    })
   }
 
   def run() = {
@@ -91,22 +74,19 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
-            serverChannel.eventLoop().execute(() => {
-              val roll = ThreadLocalRandom.current().nextInt(12)
-              val cap = roll match {
-                case x if Seq(0, 2, 4, 6, 8, 10) contains x =>
-                  CapacityType.L
-                case x if Seq(1, 3, 5, 7) contains x =>
-                  CapacityType.M
-                case 9 =>
-                  CapacityType.S
-                case _ =>
-                  CapacityType.L
-              }
-              val ch = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
-              ch.writeAndFlush(byteBuf,ch.voidPromise())
-              workingRequests(requestId) = channel
-            })
+            val roll = ThreadLocalRandom.current().nextInt(12)
+            val cap = roll match {
+              case x if Seq(0, 2, 4, 6, 8, 10) contains x =>
+                CapacityType.L
+              case x if Seq(1, 3, 5, 7) contains x =>
+                CapacityType.M
+              case 9 =>
+                CapacityType.S
+              case _ =>
+                CapacityType.L
+            }
+            val ch = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
+            ch.pipeline().fireUserEventTriggered(BenchmarkRequest(byteBuf, requestId, channel))
           }))
         }
       })

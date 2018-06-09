@@ -1,4 +1,4 @@
-package cn.goldlokedu.alicomp.provider.netty
+package cn.goldlokedu.alicomp.util
 
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.util.concurrent.Promise

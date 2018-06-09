@@ -1,5 +1,6 @@
 package cn.goldlokedu.alicomp.provider.netty
 
+import cn.goldlokedu.alicomp.util.{DirectClientHandler, RelayHandler}
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel._
@@ -22,19 +23,20 @@ class ProviderAgentHandler(dubboHost: String,
       }
     }
 
-    val b = new Bootstrap()
+    new Bootstrap()
       .group(ctx.channel().eventLoop())
       .channel(classOf[NioSocketChannel])
       .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .handler(new DirectClientHandler(promise))
-    b.connect(dubboHost, dubboPort).addListener { future: ChannelFuture =>
-      if (future.isSuccess) {
-        log.info(s"dubbo connected: ${dubboHost}, port: ${dubboPort}")
+      .connect(dubboHost, dubboPort)
+      .addListener { future: ChannelFuture =>
+        if (future.isSuccess) {
+          log.info(s"dubbo connected: ${dubboHost}, port: ${dubboPort}")
+        }
+        else {
+          ServerUtils.closeOnFlush(ctx.channel())
+        }
       }
-      else {
-        ServerUtils.closeOnFlush(ctx.channel())
-      }
-    }
   }
 }

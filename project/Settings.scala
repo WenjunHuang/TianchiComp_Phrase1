@@ -14,11 +14,12 @@ object Settings {
     val log4j2Version = "2.9.0"
     val slf4jVersion = "1.7.25"
     val etcdClientVersion = "0.1.4"
-    val nettyVersion = "4.1.24.Final"
+    val nettyVersion = "4.1.25.Final"
   }
 
   val dependencies = Def.setting(Seq(
     "io.netty" % "netty-all" % versions.nettyVersion,
+    "io.netty" % "netty-transport-native-epoll" % versions.nettyVersion,
     "com.typesafe" % "config" % "1.3.3",
     "io.spray" %% "spray-json" % "1.3.3",
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion excludeAll (

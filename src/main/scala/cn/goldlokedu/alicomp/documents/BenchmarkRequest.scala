@@ -1,18 +1,12 @@
 package cn.goldlokedu.alicomp.documents
 
-import java.nio.ByteOrder
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+import io.netty.channel.Channel
 
-case class BenchmarkRequest(requestId: Long,
-                            interface: String,
-                            method: String,
-                            parameterTypeString: String,
-                            parameter: String)
+case class BenchmarkRequest(byteBuf:ByteBuf,requestId:Long,replyTo:Channel)
 
 object BenchmarkRequest {
-  implicit val bo: ByteOrder = ByteOrder.BIG_ENDIAN
-
   // fastjson 的字符串需要带上""
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
