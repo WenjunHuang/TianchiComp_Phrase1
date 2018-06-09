@@ -67,7 +67,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
             requestId <- DubboMessage.extractRequestId(b)
           } {
-            println(s"response with $requestId")
             workingRequests.remove(requestId) match {
               case Some(channel) =>
                 channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b))
@@ -90,7 +89,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
-          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
