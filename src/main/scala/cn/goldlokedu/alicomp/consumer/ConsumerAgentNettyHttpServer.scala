@@ -23,16 +23,14 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpPort: Int) {
   val bossGroup = new NioEventLoopGroup(1)
   val workerGroup = new NioEventLoopGroup(1)
-  val alloc = PooledByteBufAllocator.DEFAULT
+  implicit val alloc = PooledByteBufAllocator.DEFAULT
   var providerAgents: Map[CapacityType.Value, Channel] = Map.empty
   val workingRequests: mutable.Map[Long, Channel] = mutable.Map.empty
-  var messageBuilder: DubboMessageBuilder = DubboMessageBuilder(alloc.compositeDirectBuffer(), alloc)
   var serverChannel: Channel = _
 
   private def connectProviderAgents() = {
     etcdClient.providers()
       .map { ras =>
-        println(ras)
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           println(s"connecting $agent")
@@ -46,6 +44,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                 println(s"connected $agent")
                 serverChannel.eventLoop().execute(() => {
                   providerAgents = providerAgents + (agent.cap -> future.channel())
+                  println(providerAgents)
                 })
               } else {
                 future.cause().printStackTrace()
@@ -56,22 +55,17 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def providerAgentResponse(byteBuf: ByteBuf): Unit = {
+  private def providerAgentResponse(msgs: Seq[ByteBuf]): Unit = {
     serverChannel.eventLoop().execute(() => {
-      val result = messageBuilder.feedRaw(byteBuf)
-      messageBuilder = result._1
-      val msgs = result._2
-      if (msgs.nonEmpty) {
-        msgs.foreach { b =>
-          for {
-            isResponse <- DubboMessage.extractIsResponse(b) if isResponse
-            requestId <- DubboMessage.extractRequestId(b)
-          } {
-            workingRequests.remove(requestId) match {
-              case Some(channel) =>
-                channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b))
-              case None =>
-            }
+      msgs.foreach { b =>
+        for {
+          isResponse <- DubboMessage.extractIsResponse(b) if isResponse
+          requestId <- DubboMessage.extractRequestId(b)
+        } {
+          workingRequests.remove(requestId) match {
+            case Some(channel) =>
+              channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b))
+            case None =>
           }
         }
       }
@@ -104,7 +98,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                 case _ =>
                   CapacityType.L
               }
-              val ch = providerAgents.get(cap).getOrElse(providerAgents.headOption.map(_._2).get)
+              val ch = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
               ch.writeAndFlush(byteBuf)
               workingRequests(requestId) = channel
             })
