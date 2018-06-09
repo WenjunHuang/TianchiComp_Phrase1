@@ -13,7 +13,7 @@ import scala.annotation.tailrec
 case class DubboMessageBuilder(first: ByteBuf, alloc: ByteBufAllocator) {
   def feedRaw(next: ByteBuf): (DubboMessageBuilder, Seq[ByteBuf]) = {
     val composit = alloc.compositeBuffer()
-    extractRaw(composit.addComponents(first, next))
+    extractRaw(composit.addComponents(true,first, next))
   }
 
   private def extractRaw(data: ByteBuf): (DubboMessageBuilder, Seq[ByteBuf]) = {

@@ -11,7 +11,7 @@ import io.netty.buffer.{ByteBuf, PooledByteBufAllocator}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
-import io.netty.channel.{Channel, ChannelFuture, ChannelInitializer, ChannelOption}
+import io.netty.channel._
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -57,7 +57,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   }
 
   private def providerAgentResponse(byteBuf: ByteBuf): Unit = {
-    println(s"replys")
     serverChannel.eventLoop().execute(() => {
       val result = messageBuilder.feedRaw(byteBuf)
       messageBuilder = result._1
@@ -68,11 +67,10 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             isResponse <- DubboMessage.extractIsResponse(b) if isResponse
             requestId <- DubboMessage.extractRequestId(b)
           } {
-            println(s"$requestId")
+            println(s"response with $requestId")
             workingRequests.remove(requestId) match {
               case Some(channel) =>
-                println("write back")
-                channel.writeAndFlush(BenchmarkResponse(b))
+                channel.writeAndFlush(BenchmarkResponse.toHttpResponse(b))
               case None =>
             }
           }
@@ -92,6 +90,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
+          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
@@ -107,7 +106,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                 case _ =>
                   CapacityType.L
               }
-              val ch = providerAgents(cap)
+              val ch = providerAgents.get(cap).getOrElse(providerAgents.headOption.map(_._2).get)
               ch.writeAndFlush(byteBuf)
               workingRequests(requestId) = channel
             })

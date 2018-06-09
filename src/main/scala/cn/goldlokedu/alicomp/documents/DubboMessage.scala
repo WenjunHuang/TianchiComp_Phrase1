@@ -61,6 +61,7 @@ case class DubboMessage(isRequest: Boolean,
 
 object DubboMessage {
   val HeaderSize = 12
+  val HeaderWithLength = 16
   def extractRequestId(msg: ByteBuf): Option[Long] = {
     if (msg.readableBytes() < HeaderSize)
       None

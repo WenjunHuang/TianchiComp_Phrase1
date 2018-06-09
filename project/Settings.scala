@@ -17,6 +17,7 @@ object Settings {
     val log4j2Version = "2.9.0"
     val slf4jVersion = "1.7.25"
     val etcdClientVersion = "0.1.4"
+    val nettyVersion = "4.1.24.Final"
   }
 
   val dependencies = Def.setting(Seq(
@@ -25,6 +26,7 @@ object Settings {
     "com.typesafe.akka" %% "akka-http" % versions.akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % versions.akkaHttpVersion,
     "com.github.mingchuno" %% "etcd4s-core" % versions.etcdClientVersion,
+    "io.netty" % "netty-all" % versions.nettyVersion,
 
   // log
     "com.typesafe.akka" %% "akka-slf4j" % versions.akkaVersion,
