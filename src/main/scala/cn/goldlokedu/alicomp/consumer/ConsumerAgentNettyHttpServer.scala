@@ -9,9 +9,8 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel._
-import io.netty.channel.epoll.{EpollEventLoopGroup, EpollServerSocketChannel}
+import io.netty.channel.epoll.{EpollEventLoopGroup, EpollServerSocketChannel, EpollSocketChannel}
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -39,7 +38,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.RCVBUF_ALLOCATOR,AdaptiveRecvByteBufAllocator.DEFAULT)
             .option(ChannelOption.ALLOCATOR,alloc)
-            .channel(classOf[NioSocketChannel])
+            .channel(classOf[EpollSocketChannel])
             .handler(new ProviderAgentHandler)
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
