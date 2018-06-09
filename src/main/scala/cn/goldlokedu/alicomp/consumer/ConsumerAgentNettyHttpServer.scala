@@ -9,9 +9,9 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel._
-import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.epoll.{EpollEventLoopGroup, EpollServerSocketChannel}
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
+import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val group = new NioEventLoopGroup(2)
+  val group = new EpollEventLoopGroup(2)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
@@ -64,7 +64,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     bootstrap.option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
     bootstrap.group(group)
       .option(ChannelOption.ALLOCATOR, alloc)
-      .channel(classOf[NioServerSocketChannel])
+      .channel(classOf[EpollServerSocketChannel])
       .handler(new LoggingHandler(LogLevel.INFO))
       .childOption(ChannelOption.ALLOCATOR, alloc)
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)

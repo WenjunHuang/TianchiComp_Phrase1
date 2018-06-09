@@ -1,16 +1,15 @@
 package cn.goldlokedu.alicomp.provider.netty
 
 
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.InetSocketAddress
 
 import cn.goldlokedu.alicomp.documents.{CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
-import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption}
-import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.epoll.{EpollEventLoopGroup, EpollServerSocketChannel}
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption}
 import org.slf4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -20,12 +19,12 @@ class ProviderAgentServer(serverHost: String,
                           name: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
-  val group = new NioEventLoopGroup(2)
+  val group = new EpollEventLoopGroup(2)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
 
   def run(): Unit = {
     val b = new ServerBootstrap()
-      .channel(classOf[NioServerSocketChannel])
+      .channel(classOf[EpollServerSocketChannel])
       .group(group)
       .option(ChannelOption.ALLOCATOR, alloc)
       .childOption(ChannelOption.ALLOCATOR, alloc)
