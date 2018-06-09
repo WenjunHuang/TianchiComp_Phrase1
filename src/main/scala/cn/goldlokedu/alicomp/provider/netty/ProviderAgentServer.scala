@@ -18,13 +18,14 @@ class ProviderAgentServer(serverHost: String,
                           cap: CapacityType.Value,
                           name: String,
                           dubboHost: String,
-                          dubboPort: Int)(implicit etcdClient: EtcdClient,log:Logger) {
+                          dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
   val bossGroup = new NioEventLoopGroup(1)
+  val workerGroup = new NioEventLoopGroup(1)
 
   def run(): Unit = {
     val b = new ServerBootstrap()
       .channel(classOf[NioServerSocketChannel])
-      .group(bossGroup)
+      .group(bossGroup, workerGroup)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
