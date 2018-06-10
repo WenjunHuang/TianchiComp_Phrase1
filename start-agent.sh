@@ -9,7 +9,6 @@ AGENT_PATH=/root/dists/mesh-agent.jar
 if [[ "$1" == "consumer" ]]; then
   echo "Starting consumer agent..."
   java -jar \
-       -server \
        -Xms1536M \
        -Xmx1536M \
        -DRUN_TYPE=consumer \

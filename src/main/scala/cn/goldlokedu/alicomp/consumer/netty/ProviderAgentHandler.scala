@@ -8,13 +8,13 @@ import io.netty.util.ReferenceCountUtil
 import scala.collection.mutable
 
 class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
-  val workingRequests: mutable.Map[Long, Channel] = mutable.Map.empty
+  val workingRequests: mutable.LongMap[Channel] = mutable.LongMap()
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: scala.Any): Unit = {
     evt match {
       case req: BenchmarkRequest =>
         workingRequests(req.requestId) = req.replyTo
-        ctx.writeAndFlush(req.byteBuf)
+        ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
       case _ =>
     }
   }
@@ -30,10 +30,10 @@ class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
             case Some(channel) =>
               channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
             case None =>
-              ReferenceCountUtil.release(msg)
           }
         }
-      case _ =>
+      case any =>
     }
+    ReferenceCountUtil.release(msg)
   }
 }
