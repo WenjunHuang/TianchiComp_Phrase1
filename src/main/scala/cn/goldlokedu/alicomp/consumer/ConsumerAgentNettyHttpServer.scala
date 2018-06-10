@@ -26,8 +26,10 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val workerGroup = ServerUtils.newGroup(4)
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
-  val largeBound = Seq(0, 2, 4, 6, 8, 10)
-  val mediumBound = Seq(1, 3, 5, 11)
+
+  val MaxRoll = 13
+  val largeBound = Seq(0, 2, 4, 6, 8, 12)
+  val mediumBound = Seq(1, 3, 5, 11, 10)
   val smallBound = Seq(9, 7)
 
   private def connectProviderAgents() = {
@@ -73,6 +75,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     b
   }
 
+
   def run() = {
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
@@ -93,7 +96,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
-            val roll = ThreadLocalRandom.current().nextInt(12)
+            val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
             val cap = roll match {
               case x if largeBound contains x =>
                 CapacityType.L
