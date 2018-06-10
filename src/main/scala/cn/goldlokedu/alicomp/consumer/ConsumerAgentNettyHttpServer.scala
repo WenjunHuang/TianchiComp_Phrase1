@@ -31,7 +31,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val largeBound = Seq(0, 2, 4, 6, 8, 12)
   val mediumBound = Seq(1, 3, 5, 11, 10)
   val smallBound = Seq(9, 7)
-  val connectionCount = Map(CapacityType.L -> 4,CapacityType.M->3,CapacityType.S->2)
+  val connectionCount = Map(CapacityType.L -> 6,CapacityType.M->4,CapacityType.S->4)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
