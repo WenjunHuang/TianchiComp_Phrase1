@@ -33,6 +33,7 @@ class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
     msg match {
       case buf: ByteBuf =>
         for {
+          isEvent <- DubboMessage.extractIsEvent(buf) if !isEvent
           requestId <- DubboMessage.extractRequestId(buf)
         } {
           workingRequests.remove(requestId) match {

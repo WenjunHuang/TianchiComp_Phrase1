@@ -23,11 +23,23 @@ object DubboMessage {
     }
   }
 
+  def extractIsEvent(msg:ByteBuf):Option[Boolean] = {
+    if (msg.readableBytes() < HeaderSize)
+      None
+    else {
+      val b = msg.getByte(2)
+      if ((b & 0x20) != 0)
+        Some(true)
+      else
+        Some(false)
+    }
+  }
+
   def extractIsResponse(msg: ByteBuf): Option[Boolean] = {
     if (msg.readableBytes() < HeaderSize)
       None
     else {
-      val b = msg.getByte(3)
+      val b = msg.getByte(2)
       if ((b & 0x8000) == 0 && (b & 0x20) == 0)
         Some(true)
       else
