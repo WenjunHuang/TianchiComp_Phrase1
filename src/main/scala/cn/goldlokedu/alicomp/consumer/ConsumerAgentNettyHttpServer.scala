@@ -23,7 +23,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
   val bossGroup = ServerUtils.newGroup(1)
-  val workerGroup = ServerUtils.newGroup(8)
+  val workerGroup = ServerUtils.newGroup(4)
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
   val largeBound = Seq(0, 2, 4, 6, 8, 10, 11, 7)
