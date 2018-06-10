@@ -2,7 +2,6 @@ package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
-import java.util.concurrent.atomic.AtomicLong
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
 import cn.goldlokedu.alicomp.documents._
@@ -13,6 +12,7 @@ import io.netty.channel._
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -41,7 +41,12 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
             .option(ChannelOption.ALLOCATOR, alloc)
             .channel(classOf[NioSocketChannel])
-            .handler(new ProviderAgentHandler)
+            .handler(new ChannelInitializer[Channel] {
+              override def initChannel(ch: Channel): Unit = {
+                ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
+                ch.pipeline().addLast(new ProviderAgentHandler)
+              }
+            })
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
               if (future.isSuccess) {
@@ -64,6 +69,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup)
       .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
+      .option[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
+      .option[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, alloc)
       .channel(classOf[NioServerSocketChannel])
@@ -71,6 +78,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childOption(ChannelOption.ALLOCATOR, alloc)
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
+      .childOption[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
+      .childOption[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
