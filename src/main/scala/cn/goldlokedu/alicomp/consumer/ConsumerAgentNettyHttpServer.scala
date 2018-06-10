@@ -23,8 +23,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
   val bossGroup = ServerUtils.newGroup(1)
-  val workerGroup = ServerUtils.newGroup(1)
-  val agentGroup = ServerUtils.newGroup(1)
+  val workerGroup = ServerUtils.newGroup(4)
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
   val largeBound = Seq(0, 2, 4, 6, 8, 10, 11, 7)
@@ -59,7 +58,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   private def createProviderAgentChannel = {
     val b = new Bootstrap
-    b.group(agentGroup)
+    b.group(workerGroup)
       .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .option[Integer](ChannelOption.SO_BACKLOG, 1024)
       .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
