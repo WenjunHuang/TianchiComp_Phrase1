@@ -11,6 +11,7 @@ if [[ "$1" == "consumer" ]]; then
   java -jar \
        -Xms1536M \
        -Xmx1536M \
+       -XX:NewRatio=1 \
        -DRUN_TYPE=consumer \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
