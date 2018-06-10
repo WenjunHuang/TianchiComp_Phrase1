@@ -19,7 +19,7 @@ class ProviderAgentServer(serverHost: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
   val bossGroup = ServerUtils.newGroup(1)
-  val workerGroup = ServerUtils.newGroup(2)
+  val workerGroup = bossGroup
 
   def run(): Unit = {
     val b = new ServerBootstrap()

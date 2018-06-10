@@ -37,7 +37,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           println(s"connecting $agent")
-          (0 to 2).foreach { _ =>
+          (0 until 4).foreach { _ =>
             val b1 = createProviderAgentChannel
             b1.connect(new InetSocketAddress(agent.host, agent.port))
               .addListener { future: ChannelFuture =>
