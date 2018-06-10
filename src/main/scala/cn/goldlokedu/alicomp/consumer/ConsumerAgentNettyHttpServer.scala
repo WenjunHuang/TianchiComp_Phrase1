@@ -26,9 +26,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val workerGroup = ServerUtils.newGroup(4)
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
-  val largeBound = Seq(0, 2, 4, 6, 8, 10, 11, 7)
-  val mediumBound = Seq(1, 3, 5)
-  val smallBound = Seq(9)
+  val largeBound = Seq(0, 2, 4, 6, 8, 10)
+  val mediumBound = Seq(1, 3, 5, 11)
+  val smallBound = Seq(9, 7)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -36,7 +36,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           println(s"connecting $agent")
-          (0 until 1).foreach { _ =>
+          (0 until 4).foreach { _ =>
             val b1 = createProviderAgentChannel
             b1.connect(new InetSocketAddress(agent.host, agent.port))
               .addListener { future: ChannelFuture =>
