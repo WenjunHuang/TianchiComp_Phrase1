@@ -60,9 +60,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     val b = new Bootstrap
     b.group(workerGroup)
       .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
-      .option[Integer](ChannelOption.SO_BACKLOG, 1024)
       .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
-      .option[Integer](ChannelOption.MAX_MESSAGES_PER_READ, 128)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .handler(new ChannelInitializer[Channel] {

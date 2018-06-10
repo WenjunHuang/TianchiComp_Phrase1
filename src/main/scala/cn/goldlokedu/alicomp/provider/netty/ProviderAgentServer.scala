@@ -18,7 +18,7 @@ class ProviderAgentServer(serverHost: String,
                           name: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
-  val bossGroup = ServerUtils.newGroup(1)
+  val bossGroup = ServerUtils.newGroup()
   val workerGroup = bossGroup
 
   def run(): Unit = {
