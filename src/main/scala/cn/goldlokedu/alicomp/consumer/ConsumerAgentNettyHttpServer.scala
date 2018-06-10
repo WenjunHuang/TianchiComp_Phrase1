@@ -1,5 +1,6 @@
 package cn.goldlokedu.alicomp.consumer
 
+import java.lang
 import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
@@ -24,7 +25,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val bossGroup = ServerUtils.newGroup(1)
   val workerGroup = ServerUtils.newGroup(1)
   val agentGroup = ServerUtils.newGroup(1)
-  var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
+  var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
   val largeBound = Seq(0, 2, 4, 6, 8, 10, 11, 7)
   val mediumBound = Seq(1, 3, 5)
@@ -36,38 +37,43 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           println(s"connecting $agent")
-          val b = new Bootstrap
-          b.group(agentGroup)
-            .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
-            .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-            .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
-            .option[java.lang.Integer](ChannelOption.MAX_MESSAGES_PER_READ, 128)
-            .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-            .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .handler(new ChannelInitializer[Channel] {
-              override def initChannel(ch: Channel): Unit = {
-                ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
-                ch.pipeline().addLast(new ProviderAgentHandler)
+          (0 to 2).foreach { _ =>
+            val b1 = createProviderAgentChannel
+            b1.connect(new InetSocketAddress(agent.host, agent.port))
+              .addListener { future: ChannelFuture =>
+                if (future.isSuccess) {
+                  println(s"connected $agent")
+                  val ch = future.channel()
+                  serverChannel.eventLoop().execute(() => {
+                    providerAgents.getOrElseUpdate(agent.cap, mutable.Buffer[Channel]()).+=(ch)
+                  })
+                } else {
+                  future.cause().printStackTrace()
+                }
               }
-            })
-          ServerUtils.setChannelClass(b)
-
-          b.connect(new InetSocketAddress(agent.host, agent.port))
-            .addListener { future: ChannelFuture =>
-              if (future.isSuccess) {
-                println(s"connected $agent")
-                val ch = future.channel()
-                serverChannel.eventLoop().execute(() => {
-                  providerAgents(agent.cap) = ch
-                  println(providerAgents)
-                })
-              } else {
-                future.cause().printStackTrace()
-              }
-            }
+          }
         }
       }
       .onComplete(_ => etcdClient.shutdown())
+  }
+
+  private def createProviderAgentChannel = {
+    val b = new Bootstrap
+    b.group(agentGroup)
+      .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
+      .option[Integer](ChannelOption.SO_BACKLOG, 1024)
+      .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
+      .option[Integer](ChannelOption.MAX_MESSAGES_PER_READ, 128)
+      .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+      .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+      .handler(new ChannelInitializer[Channel] {
+        override def initChannel(ch: Channel): Unit = {
+          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
+          ch.pipeline().addLast(new ProviderAgentHandler)
+        }
+      })
+    ServerUtils.setChannelClass(b)
+    b
   }
 
   def run() = {
@@ -101,7 +107,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
               case _ =>
                 CapacityType.L
             }
-            val ch = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
+            val chs = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
+            val i = ThreadLocalRandom.current().nextInt(chs.size)
+            val ch = chs(i)
             ch.pipeline().fireUserEventTriggered(BenchmarkRequest(byteBuf, requestId, channel))
           }))
         }
