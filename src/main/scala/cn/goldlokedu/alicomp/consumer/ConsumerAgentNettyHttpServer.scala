@@ -26,8 +26,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val agentGroup = ServerUtils.newGroup(1)
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
-  val largeBound = Seq(0, 2, 4, 6, 8, 10, 11)
-  val mediumBound = Seq(1, 3, 5, 7)
+  val largeBound = Seq(0, 2, 4, 6, 8, 10, 11, 7)
+  val mediumBound = Seq(1, 3, 5)
   val smallBound = Seq(9)
 
   private def connectProviderAgents() = {
@@ -41,6 +41,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
+            .option[java.lang.Integer](ChannelOption.MAX_MESSAGES_PER_READ, 128)
             .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .handler(new ChannelInitializer[Channel] {
