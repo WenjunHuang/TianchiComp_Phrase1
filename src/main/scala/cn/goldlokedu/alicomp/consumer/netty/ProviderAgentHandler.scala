@@ -1,5 +1,7 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
+import java.util.concurrent.TimeUnit
+
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessage}
 import io.netty.buffer.ByteBuf
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
@@ -23,7 +25,6 @@ class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
     msg match {
       case buf: ByteBuf =>
         for {
-          isResponse <- DubboMessage.extractIsResponse(buf) if isResponse
           requestId <- DubboMessage.extractRequestId(buf)
         } {
           workingRequests.remove(requestId) match {
@@ -35,5 +36,15 @@ class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
       case any =>
     }
     ReferenceCountUtil.release(msg)
+  }
+
+  override def channelActive(ctx: ChannelHandlerContext): Unit = {
+//    ctx.channel().eventLoop().scheduleAtFixedRate({()=>
+//      println(s"working ${workingRequests.size}")
+//    },1,1,TimeUnit.SECONDS)
+  }
+
+  override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
+    ctx.flush()
   }
 }

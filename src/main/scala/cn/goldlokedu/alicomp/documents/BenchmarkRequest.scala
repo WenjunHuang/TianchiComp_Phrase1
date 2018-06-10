@@ -27,15 +27,16 @@ object BenchmarkRequest {
   @inline
   private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String, byteBuf: ByteBuf) = {
     val body = Seq(DubboVersion, // dubbo version
-      s""""${interface}"""", // service name
+      s""""$interface"""", // service name
       RequestVersion, // service version
-      s""""${method}"""", // method name
+      s""""$method"""", // method name
       s""""${parameterTypeString}"""", // method parameter type
       s""""${parameter}"""", // method arguments
       s"{}"
-    ).mkString("\n").getBytes("UTF-8")
-    byteBuf.writeInt(body.size)
-    byteBuf.writeBytes(body)
+    ).mkString("\n")
+    val bytes = body.getBytes("UTF-8")
+    byteBuf.writeInt(bytes.size)
+    byteBuf.writeBytes(bytes)
   }
 
   @inline

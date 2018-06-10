@@ -35,7 +35,6 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
 
           sender(byteBuf, requestId, ctx.channel())
       case any =>
-        println("get not post")
         ctx.close()
     }
   }
