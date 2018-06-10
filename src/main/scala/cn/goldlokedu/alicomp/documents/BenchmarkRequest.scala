@@ -4,13 +4,12 @@ package cn.goldlokedu.alicomp.documents
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 import io.netty.channel.Channel
 
-case class BenchmarkRequest(byteBuf:ByteBuf,requestId:Long,replyTo:Channel)
+case class BenchmarkRequest(byteBuf: ByteBuf, requestId: Long, replyTo: Channel)
 
 object BenchmarkRequest {
   // fastjson 的字符串需要带上""
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
-
 
   @inline
   def makeDubboRequest(requestId: Long,
@@ -26,14 +25,13 @@ object BenchmarkRequest {
 
   @inline
   private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String, byteBuf: ByteBuf) = {
-    val body = Seq(DubboVersion, // dubbo version
-      s""""$interface"""", // service name
-      RequestVersion, // service version
-      s""""$method"""", // method name
-      s""""${parameterTypeString}"""", // method parameter type
-      s""""${parameter}"""", // method arguments
+    val body = DubboVersion + "\n" +
+      s""""$interface"""" + "\n" +
+      RequestVersion + "\n" +
+      s""""$method"""" + "\n" +
+      s""""${parameterTypeString}"""" + "\n" +
+      s""""${parameter}"""" + "\n" +
       s"{}"
-    ).mkString("\n")
     val bytes = body.getBytes("UTF-8")
     byteBuf.writeInt(bytes.size)
     byteBuf.writeBytes(bytes)
