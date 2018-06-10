@@ -63,14 +63,7 @@ object DubboMessage {
     if (msg.readableBytes() < HeaderSize)
       None
     else {
-      val requestId = JByte.toUnsignedLong(msg.getByte(4)) << 56 |
-        JByte.toUnsignedLong(msg.getByte(5)) << 48 |
-        JByte.toUnsignedLong(msg.getByte(6)) << 40 |
-        JByte.toUnsignedLong(msg.getByte(7)) << 32 |
-        JByte.toUnsignedLong(msg.getByte(8)) << 24 |
-        JByte.toUnsignedLong(msg.getByte(9)) << 16 |
-        JByte.toUnsignedLong(msg.getByte(10)) << 8 |
-        JByte.toUnsignedLong(msg.getByte(11))
+      val requestId = msg.getLong(4)
       Some(requestId)
     }
   }

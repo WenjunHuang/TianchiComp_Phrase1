@@ -1,7 +1,5 @@
 package cn.goldlokedu.alicomp.documents
 
-import java.lang.{Byte => JByte}
-
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 import io.netty.util.ReferenceCountUtil
 
@@ -21,13 +19,14 @@ case class DubboMessageBuilder(first: ByteBuf, alloc: ByteBufAllocator) {
     def fold(restData: ByteBuf, messages: Seq[ByteBuf]): (ByteBuf, Seq[ByteBuf]) = {
       val restSize = restData.readableBytes()
       if (restSize > 16) {
-        val dataLength = JByte.toUnsignedInt(restData.getByte(12)) << 24 |
-          JByte.toUnsignedInt(restData.getByte(13)) << 16 |
-          JByte.toUnsignedInt(restData.getByte(14)) << 8 |
-          JByte.toUnsignedInt(restData.getByte(15))
+        val dataLength = restData.getInt(DubboMessage.HeaderSize)
+//        val dataLength = JByte.toUnsignedInt(restData.getByte(12)) << 24 |
+//          JByte.toUnsignedInt(restData.getByte(13)) << 16 |
+//          JByte.toUnsignedInt(restData.getByte(14)) << 8 |
+//          JByte.toUnsignedInt(restData.getByte(15))
 
         // 消息已经完整，开始解析
-        val total = 16 + dataLength
+        val total = DubboMessage.HeaderWithLength + dataLength
         if (restSize >= total) {
           // 内容数据已经有了
           val split = restData.retainedSlice(restData.readerIndex(), total)

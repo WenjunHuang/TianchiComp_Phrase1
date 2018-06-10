@@ -4,7 +4,7 @@ import cn.goldlokedu.alicomp.util.{DirectClientHandler, RelayHandler}
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBufAllocator
 import io.netty.channel._
-import io.netty.channel.epoll.EpollSocketChannel
+import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.util.concurrent.Future
 import org.slf4j.Logger
 
@@ -26,7 +26,7 @@ class ProviderAgentHandler(dubboHost: String,
 
     new Bootstrap()
       .group(ctx.channel().eventLoop())
-      .channel(classOf[EpollSocketChannel])
+      .channel(classOf[NioSocketChannel])
       .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .option(ChannelOption.ALLOCATOR,alloc)
@@ -35,7 +35,7 @@ class ProviderAgentHandler(dubboHost: String,
       .connect(dubboHost, dubboPort)
       .addListener { future: ChannelFuture =>
         if (future.isSuccess) {
-          log.info(s"dubbo connected: ${dubboHost}, port: ${dubboPort}")
+          log.info(s"dubbo connected: $dubboHost, port: $dubboPort")
         }
         else {
           ServerUtils.closeOnFlush(ctx.channel())

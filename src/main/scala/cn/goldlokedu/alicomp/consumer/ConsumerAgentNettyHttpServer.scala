@@ -9,8 +9,9 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel._
-import io.netty.channel.epoll.{EpollEventLoopGroup, EpollServerSocketChannel, EpollSocketChannel}
+import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
+import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
@@ -20,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val group = new EpollEventLoopGroup(2)
+  val bossGroup = new NioEventLoopGroup(1)
+  val workerGroup = new NioEventLoopGroup()
   implicit val alloc = PooledByteBufAllocator.DEFAULT
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
@@ -32,13 +34,13 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           val b = new Bootstrap
-          b.group(group)
+          b.group(workerGroup)
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.RCVBUF_ALLOCATOR,AdaptiveRecvByteBufAllocator.DEFAULT)
             .option(ChannelOption.ALLOCATOR,alloc)
-            .channel(classOf[EpollSocketChannel])
+            .channel(classOf[NioSocketChannel])
             .handler(new ProviderAgentHandler)
             .connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
@@ -61,9 +63,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   def run() = {
     val bootstrap = new ServerBootstrap()
     bootstrap.option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-    bootstrap.group(group)
+    bootstrap.group(bossGroup,workerGroup)
       .option(ChannelOption.ALLOCATOR, alloc)
-      .channel(classOf[EpollServerSocketChannel])
+      .channel(classOf[NioServerSocketChannel])
       .handler(new LoggingHandler(LogLevel.INFO))
       .childOption(ChannelOption.ALLOCATOR, alloc)
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
@@ -96,7 +98,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
     connectProviderAgents()
     serverChannel.closeFuture().sync()
-    group.shutdownGracefully()
+    workerGroup.shutdownGracefully()
   }
 
 }
