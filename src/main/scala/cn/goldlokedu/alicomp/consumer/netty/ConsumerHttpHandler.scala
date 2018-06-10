@@ -1,16 +1,17 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest
 import io.netty.buffer.ByteBuf
-import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter, SimpleChannelInboundHandler}
+import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostRequestDecoder}
-import io.netty.util.ReferenceCountUtil
+import io.netty.util.{AsciiString, ReferenceCountUtil}
 
 class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends ChannelInboundHandlerAdapter {
+  val interface = AsciiString.cached("interface")
+  val method = AsciiString.cached("method")
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
     msg match {

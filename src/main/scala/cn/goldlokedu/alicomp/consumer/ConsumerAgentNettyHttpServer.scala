@@ -6,12 +6,11 @@ import java.util.concurrent.ThreadLocalRandom
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
 import cn.goldlokedu.alicomp.documents._
 import cn.goldlokedu.alicomp.etcd.EtcdClient
+import cn.goldlokedu.alicomp.provider.netty.ServerUtils
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel._
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
@@ -22,10 +21,12 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = new NioEventLoopGroup(4)
-  implicit val alloc = PooledByteBufAllocator.DEFAULT
+  val bossGroup = ServerUtils.newGroup(2)
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
+  val largeBound = Seq(0, 2, 4, 6, 8, 10, 11)
+  val mediumBound = Seq(1, 3, 5, 7)
+  val smallBound = Seq(9)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -39,15 +40,16 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-            .option(ChannelOption.ALLOCATOR, alloc)
-            .channel(classOf[NioSocketChannel])
+            .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .handler(new ChannelInitializer[Channel] {
               override def initChannel(ch: Channel): Unit = {
                 ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
                 ch.pipeline().addLast(new ProviderAgentHandler)
               }
             })
-            .connect(new InetSocketAddress(agent.host, agent.port))
+          ServerUtils.setChannelClass(b)
+
+          b.connect(new InetSocketAddress(agent.host, agent.port))
             .addListener { future: ChannelFuture =>
               if (future.isSuccess) {
                 println(s"connected $agent")
@@ -72,10 +74,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .option[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
       .option[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-      .option(ChannelOption.ALLOCATOR, alloc)
-      .channel(classOf[NioServerSocketChannel])
+      .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .handler(new LoggingHandler(LogLevel.INFO))
-      .childOption(ChannelOption.ALLOCATOR, alloc)
+      .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childOption[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
@@ -88,11 +89,11 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
             val roll = ThreadLocalRandom.current().nextInt(12)
             val cap = roll match {
-              case x if Seq(0, 2, 4, 6, 8, 10) contains x =>
+              case x if largeBound contains x =>
                 CapacityType.L
-              case x if Seq(1, 3, 5, 7) contains x =>
+              case x if mediumBound contains x =>
                 CapacityType.M
-              case 9 =>
+              case x if smallBound contains x =>
                 CapacityType.S
               case _ =>
                 CapacityType.L
@@ -102,6 +103,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           }))
         }
       })
+
+    ServerUtils.setServerChannelClass(bootstrap)
 
     serverChannel = bootstrap.bind(consumerHttpPort)
       .sync().channel()

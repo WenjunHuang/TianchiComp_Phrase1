@@ -20,17 +20,15 @@ class ProviderAgentServer(serverHost: String,
                           name: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
-  val bossGroup = new NioEventLoopGroup(2)
-  implicit val alloc = PooledByteBufAllocator.DEFAULT
+  val bossGroup = ServerUtils.newGroup(2)
 
   def run(): Unit = {
     val b = new ServerBootstrap()
-      .channel(classOf[NioServerSocketChannel])
       .group(bossGroup)
       .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-      .option(ChannelOption.ALLOCATOR, alloc)
-      .childOption(ChannelOption.ALLOCATOR, alloc)
+      .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+      .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childHandler(new ChannelInitializer[SocketChannel] {
@@ -38,6 +36,7 @@ class ProviderAgentServer(serverHost: String,
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
         }
       })
+    ServerUtils.setServerChannelClass(b)
     val serverChannel = b
       .bind(new InetSocketAddress(serverHost, 0))
       .sync()
