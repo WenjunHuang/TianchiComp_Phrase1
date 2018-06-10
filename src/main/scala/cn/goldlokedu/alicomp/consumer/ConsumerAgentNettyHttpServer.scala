@@ -21,7 +21,9 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(2)
+  val bossGroup = ServerUtils.newGroup(1)
+  val workerGroup = ServerUtils.newGroup(1)
+  val agentGroup = ServerUtils.newGroup(1)
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
   val largeBound = Seq(0, 2, 4, 6, 8, 10, 11)
@@ -35,7 +37,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           val b = new Bootstrap
-          b.group(bossGroup)
+          b.group(agentGroup)
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
@@ -69,7 +71,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   def run() = {
     val bootstrap = new ServerBootstrap()
-    bootstrap.group(bossGroup)
+    bootstrap.group(bossGroup, workerGroup)
       .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
       .option[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
       .option[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)

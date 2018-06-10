@@ -7,9 +7,7 @@ import cn.goldlokedu.alicomp.documents.{CapacityType, RegisteredAgent}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption}
 import org.slf4j.Logger
 
@@ -20,11 +18,12 @@ class ProviderAgentServer(serverHost: String,
                           name: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
-  val bossGroup = ServerUtils.newGroup(2)
+  val bossGroup = ServerUtils.newGroup(1)
+  val workerGroup = ServerUtils.newGroup(2)
 
   def run(): Unit = {
     val b = new ServerBootstrap()
-      .group(bossGroup)
+      .group(bossGroup,workerGroup)
       .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
