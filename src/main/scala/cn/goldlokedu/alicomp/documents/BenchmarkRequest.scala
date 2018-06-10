@@ -10,6 +10,10 @@ object BenchmarkRequest {
   // fastjson 的字符串需要带上""
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
+  // magic
+  val magic = 0xdabb
+  //req + 2way + event + serialization id + status
+  val req = 0xc600
 
   @inline
   def makeDubboRequest(requestId: Long,
@@ -17,7 +21,7 @@ object BenchmarkRequest {
                        method: String,
                        parameterTypeString: String,
                        parameter: String)(implicit alloc: ByteBufAllocator): ByteBuf = {
-    val builder = alloc.buffer(128)
+    val builder = alloc.directBuffer(128)
     createDubboRequestHeader(builder, requestId)
     createDubboRequestBody(interface, method, parameterTypeString, parameter, builder)
     builder
@@ -39,10 +43,6 @@ object BenchmarkRequest {
 
   @inline
   private def createDubboRequestHeader(builder: ByteBuf, requestId: Long) = {
-    // magic
-    val magic = 0xdabb
-    //req + 2way + event + serialization id + status
-    val req = 0xc600
     builder.writeShort(magic)
     builder.writeShort(req)
     builder.writeLong(requestId)

@@ -29,6 +29,8 @@ class ProviderAgentServer(serverHost: String,
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF,8 * 1024 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF,8 * 1024 * 1024)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {

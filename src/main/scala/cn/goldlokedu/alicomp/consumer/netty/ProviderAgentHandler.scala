@@ -33,15 +33,9 @@ class ProviderAgentHandler extends ChannelInboundHandlerAdapter {
             case None =>
           }
         }
-      case any =>
+      case _ =>
     }
     ReferenceCountUtil.release(msg)
-  }
-
-  override def channelActive(ctx: ChannelHandlerContext): Unit = {
-//    ctx.channel().eventLoop().scheduleAtFixedRate({()=>
-//      println(s"working ${workingRequests.size}")
-//    },1,1,TimeUnit.SECONDS)
   }
 
   override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {

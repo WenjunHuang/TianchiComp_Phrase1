@@ -65,6 +65,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+      .option[java.lang.Integer](ChannelOption.SO_SNDBUF, 8 * 1024 * 1024)
+      .option[java.lang.Integer](ChannelOption.SO_RCVBUF, 8 * 1024 * 1024)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
           ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
@@ -89,6 +91,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childOption[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
+      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF,256 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF,8 * 1024 * 1024)
       .childOption[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {

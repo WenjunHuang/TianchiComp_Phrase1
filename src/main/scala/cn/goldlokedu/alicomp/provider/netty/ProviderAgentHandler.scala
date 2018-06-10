@@ -27,6 +27,8 @@ class ProviderAgentHandler(dubboHost: String,
       .group(ctx.channel().eventLoop())
       .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
+      .option[java.lang.Integer](ChannelOption.SO_SNDBUF,8 * 1024 * 1024)
+      .option[java.lang.Integer](ChannelOption.SO_RCVBUF,8 * 1024 * 1024)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .handler(new DirectClientHandler(promise))
