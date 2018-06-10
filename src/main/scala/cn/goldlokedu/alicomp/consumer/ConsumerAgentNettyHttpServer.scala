@@ -2,6 +2,7 @@ package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.atomic.AtomicLong
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
 import cn.goldlokedu.alicomp.documents._
@@ -21,8 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = new NioEventLoopGroup(1)
-  val workerGroup = new NioEventLoopGroup()
+  val bossGroup = new NioEventLoopGroup(4)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
   var providerAgents: mutable.Map[CapacityType.Value, Channel] = mutable.Map.empty
   var serverChannel: Channel = _
@@ -34,12 +34,12 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           val b = new Bootstrap
-          b.group(workerGroup)
+          b.group(bossGroup)
             .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
             .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
             .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
-            .option(ChannelOption.RCVBUF_ALLOCATOR,AdaptiveRecvByteBufAllocator.DEFAULT)
-            .option(ChannelOption.ALLOCATOR,alloc)
+            .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+            .option(ChannelOption.ALLOCATOR, alloc)
             .channel(classOf[NioSocketChannel])
             .handler(new ProviderAgentHandler)
             .connect(new InetSocketAddress(agent.host, agent.port))
@@ -62,8 +62,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   def run() = {
     val bootstrap = new ServerBootstrap()
-    bootstrap.option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-    bootstrap.group(bossGroup,workerGroup)
+    bootstrap.group(bossGroup)
+      .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
+      .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, alloc)
       .channel(classOf[NioServerSocketChannel])
       .handler(new LoggingHandler(LogLevel.INFO))
@@ -98,7 +99,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
     connectProviderAgents()
     serverChannel.closeFuture().sync()
-    workerGroup.shutdownGracefully()
+    bossGroup.shutdownGracefully()
   }
 
 }

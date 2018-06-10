@@ -20,17 +20,19 @@ class ProviderAgentServer(serverHost: String,
                           name: String,
                           dubboHost: String,
                           dubboPort: Int)(implicit etcdClient: EtcdClient, log: Logger) {
-  val bossGroup = new NioEventLoopGroup(1)
-  val workerGroup = new NioEventLoopGroup()
+  val bossGroup = new NioEventLoopGroup(2)
   implicit val alloc = PooledByteBufAllocator.DEFAULT
 
   def run(): Unit = {
     val b = new ServerBootstrap()
       .channel(classOf[NioServerSocketChannel])
-      .group(bossGroup,workerGroup)
+      .group(bossGroup)
+      .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
+      .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, alloc)
       .childOption(ChannelOption.ALLOCATOR, alloc)
       .childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+      .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
@@ -46,7 +48,7 @@ class ProviderAgentServer(serverHost: String,
 
 
     serverChannel.closeFuture().sync()
-    workerGroup.shutdownGracefully()
+    bossGroup.shutdownGracefully()
   }
 
 }

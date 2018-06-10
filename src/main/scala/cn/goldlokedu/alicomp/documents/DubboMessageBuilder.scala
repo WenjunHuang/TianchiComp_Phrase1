@@ -20,10 +20,6 @@ case class DubboMessageBuilder(first: ByteBuf, alloc: ByteBufAllocator) {
       val restSize = restData.readableBytes()
       if (restSize > 16) {
         val dataLength = restData.getInt(DubboMessage.HeaderSize)
-//        val dataLength = JByte.toUnsignedInt(restData.getByte(12)) << 24 |
-//          JByte.toUnsignedInt(restData.getByte(13)) << 16 |
-//          JByte.toUnsignedInt(restData.getByte(14)) << 8 |
-//          JByte.toUnsignedInt(restData.getByte(15))
 
         // 消息已经完整，开始解析
         val total = DubboMessage.HeaderWithLength + dataLength
