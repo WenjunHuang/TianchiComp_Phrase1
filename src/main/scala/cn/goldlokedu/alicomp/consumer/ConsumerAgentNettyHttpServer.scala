@@ -31,6 +31,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val largeBound = Seq(0, 2, 4, 6, 8, 12)
   val mediumBound = Seq(1, 3, 5, 11, 10)
   val smallBound = Seq(9, 7)
+  val connectionCount = Map(CapacityType.L -> 4,CapacityType.M->3,CapacityType.S->2)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -38,7 +39,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         val rest = ras.filterNot(p => providerAgents.contains(p.cap))
         rest.foreach { agent =>
           println(s"connecting $agent")
-          (0 until 8).foreach { _ =>
+          (0 until connectionCount(agent.cap)).foreach { _ =>
             val b1 = createProviderAgentChannel
             b1.connect(new InetSocketAddress(agent.host, agent.port))
               .addListener { future: ChannelFuture =>
