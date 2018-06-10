@@ -22,16 +22,16 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(1)
-  val workerGroup = ServerUtils.newGroup(4)
+  val bossGroup = ServerUtils.newGroup(4)
+  val workerGroup = bossGroup
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
 
   val MaxRoll = 13
-  val largeBound = Seq(0, 2, 4, 6, 8, 12)
-  val mediumBound = Seq(1, 3, 5, 11, 10)
-  val smallBound = Seq(9, 7)
-  val connectionCount = Map(CapacityType.L -> 6,CapacityType.M->4,CapacityType.S->4)
+  val largeBound = Set(0, 2, 3, 6, 8, 9, 12)
+  val mediumBound = Set(1, 4, 5, 10, 11)
+  val smallBound = Set(2, 7)
+  val connectionCount = Map(CapacityType.L -> 1, CapacityType.M -> 4, CapacityType.S -> 2)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -66,8 +66,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-      .option[java.lang.Integer](ChannelOption.SO_SNDBUF, 8 * 1024 * 1024)
-      .option[java.lang.Integer](ChannelOption.SO_RCVBUF, 8 * 1024 * 1024)
+      .option[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
+      .option[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
           ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
@@ -92,8 +92,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childOption[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
-      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF,256 * 1024)
-      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF,8 * 1024 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 256 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 256 * 1024)
       .childOption[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {

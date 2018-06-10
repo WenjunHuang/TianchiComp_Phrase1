@@ -8,7 +8,6 @@
         </Console>
     </Appenders>
     <Loggers>
-        <logger name="akka" level="INFO" />
         <logger name="cn.goldlokedu.alicomp" level="INFO"/>
         <logger name="io.netty" level="INFO"/>
         <Root level="INFO">
