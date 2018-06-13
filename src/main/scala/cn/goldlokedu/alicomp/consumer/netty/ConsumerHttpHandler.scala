@@ -23,6 +23,8 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
 
         val requestId = UUID.randomUUID().getLeastSignificantBits
         val builder = req.content().retain()
+        builder.resetReaderIndex()
+        builder.resetWriterIndex()
         val byteBuf = BenchmarkRequest.makeDubboRequest(
           requestId = requestId,
           interface = interface,

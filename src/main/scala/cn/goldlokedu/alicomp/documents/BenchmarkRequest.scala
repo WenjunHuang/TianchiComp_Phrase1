@@ -34,7 +34,7 @@ object BenchmarkRequest {
       RequestVersion + "\n" +
       s""""$method"""" + "\n" +
       s""""$parameterTypeString"""" + "\n" +
-      s"\"$parameter\"" + "\n" +
+      s""""${parameter}"""" + "\n" +
       s"{}"
     val bytes = body.getBytes("UTF-8")
     byteBuf.writeInt(bytes.size)

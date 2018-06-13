@@ -31,7 +31,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val largeBound = Set(0, 1, 4, 5, 9, 10, 12)
   val mediumBound = Set(2, 6, 7, 11)
   val smallBound = Set(3, 8)
-  val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 2, CapacityType.S -> 2)
+  val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 1, CapacityType.S -> 1)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -115,7 +115,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             val chs = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
             val i = ThreadLocalRandom.current().nextInt(chs.size)
             val ch = chs(i)
-            ch.pipeline().fireUserEventTriggered(BenchmarkRequest(byteBuf, requestId, channel))
+            ch.writeAndFlush(BenchmarkRequest(byteBuf,requestId,channel),ch.voidPromise())
           }))
         }
       })

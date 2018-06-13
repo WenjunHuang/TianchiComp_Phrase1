@@ -12,7 +12,7 @@ class RelayHandler(relayChannel: Channel) extends ChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
     if (relayChannel.isActive)
-      relayChannel.write(msg, relayChannel.voidPromise())
+      relayChannel.writeAndFlush(msg, relayChannel.voidPromise())
     else
       ReferenceCountUtil.release(msg)
   }
