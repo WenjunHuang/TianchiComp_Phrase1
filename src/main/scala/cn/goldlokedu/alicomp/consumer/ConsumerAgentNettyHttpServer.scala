@@ -28,10 +28,10 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   var serverChannel: Channel = _
 
   val MaxRoll = 13
-  val largeBound = Set(0, 2, 3, 6, 8, 9, 12)
-  val mediumBound = Set(1, 4, 5, 10, 11)
-  val smallBound = Set(2, 7)
-  val connectionCount = Map(CapacityType.L -> 4, CapacityType.M -> 4, CapacityType.S -> 4)
+  val largeBound = Set(0, 1, 4, 5, 9, 10, 12)
+  val mediumBound = Set(2, 6, 7, 11)
+  val smallBound = Set(3, 8)
+  val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 2, CapacityType.S -> 2)
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -99,7 +99,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
-          pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024))
+          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
             val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
             val cap = roll match {

@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.documents
 
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
 
 case class BenchmarkRequest(byteBuf: ByteBuf, requestId: Long, replyTo: Channel)
@@ -20,8 +20,8 @@ object BenchmarkRequest {
                        interface: String,
                        method: String,
                        parameterTypeString: String,
-                       parameter: String)(implicit alloc: ByteBufAllocator): ByteBuf = {
-    val builder = alloc.directBuffer(128)
+                       parameter: String,
+                       builder: ByteBuf) = {
     createDubboRequestHeader(builder, requestId)
     createDubboRequestBody(interface, method, parameterTypeString, parameter, builder)
     builder
@@ -33,8 +33,8 @@ object BenchmarkRequest {
       s""""$interface"""" + "\n" +
       RequestVersion + "\n" +
       s""""$method"""" + "\n" +
-      s""""${parameterTypeString}"""" + "\n" +
-      s""""${parameter}"""" + "\n" +
+      s""""$parameterTypeString"""" + "\n" +
+      s"\"$parameter\"" + "\n" +
       s"{}"
     val bytes = body.getBytes("UTF-8")
     byteBuf.writeInt(bytes.size)
