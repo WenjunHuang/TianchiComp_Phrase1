@@ -40,7 +40,7 @@ object DubboMessage {
       None
     else {
       val b = msg.getByte(2)
-      if ((b & 0x8000) == 0 && (b & 0x20) == 0)
+      if ((b & 0x80) == 0 && (b & 0x20) == 0)
         Some(true)
       else
         Some(false)
