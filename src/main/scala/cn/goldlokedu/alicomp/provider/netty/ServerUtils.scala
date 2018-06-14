@@ -30,12 +30,12 @@ object ServerUtils {
   def newGroup(threads: Int = 0) = {
     if (Epoll.isAvailable()) {
       val eg = new EpollEventLoopGroup(threads)
-      eg.setIoRatio(100)
+//      eg.setIoRatio(100)
       eg
     }
     else {
       val ng = new NioEventLoopGroup(threads)
-      ng.setIoRatio(100)
+//      ng.setIoRatio(100)
       ng
     }
   }
