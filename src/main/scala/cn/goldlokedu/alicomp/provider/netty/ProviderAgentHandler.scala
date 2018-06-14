@@ -25,13 +25,6 @@ class ProviderAgentHandler(dubboHost: String,
 
     val b = new Bootstrap()
       .group(ctx.channel().eventLoop())
-      .option[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
-      .option[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
-      .option[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
-      .option[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
-      .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-      .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(2 * 1024))
-      .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 2 * 1024 * 1024))
       .handler(new DirectClientHandler(promise))
 
     ServerUtils.setChannelClass(b)

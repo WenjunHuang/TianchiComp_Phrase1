@@ -24,14 +24,6 @@ class ProviderAgentServer(serverHost: String,
   def run(): Unit = {
     val b = new ServerBootstrap()
       .group(bossGroup, workerGroup)
-      .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-      .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-      .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-      .childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(2 * 1024))
-      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
-      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
-      .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
-      .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 2 * 1024 * 1024))
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
