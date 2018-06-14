@@ -11,11 +11,11 @@ import scala.collection.mutable
 
 object ProviderAgentUtils {
   def setProviderAgentChannel(cap:CapacityType.Value,channel:Channel) = {
-    AgentMap(cap) = channel
+    AgentMap.get()(cap) = channel
   }
 
   def getProviderAgentChannel(cap:CapacityType.Value):Channel = {
-    AgentMap(cap)
+    AgentMap.get()(cap)
   }
 
   private val AgentMap = ThreadLocal.withInitial(() => {
