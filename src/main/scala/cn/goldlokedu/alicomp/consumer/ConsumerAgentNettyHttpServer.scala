@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler}
-import cn.goldlokedu.alicomp.documents._
+import cn.goldlokedu.alicomp.documents.{CapacityType, _}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import cn.goldlokedu.alicomp.provider.netty.ServerUtils
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
@@ -28,10 +28,22 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   var serverChannel: Channel = _
 
   val MaxRoll = 13
-  val largeBound = Set(0, 1, 4, 5, 9, 10,3,8)
+  val largeBound = Set(0, 1, 3, 4, 5, 9, 10)
   val mediumBound = Set(2, 6, 7, 11, 12)
-  val smallBound = Nil//Set(3, 8)
+  val smallBound = Set(8)
   val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 1, CapacityType.S -> 1)
+
+  private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
+    cap match {
+      case CapacityType.L =>
+        callProviderAgent(CapacityType.M, req)
+      case CapacityType.M =>
+        callProviderAgent(CapacityType.S, req)
+      case CapacityType.S =>
+        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+
+    }
+  }
 
   private def connectProviderAgents() = {
     etcdClient.providers()
@@ -40,7 +52,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           (0 until connectionCount(agent.cap)).foreach { _ =>
-            val b1 = createProviderAgentBootstrap
+            val b1 = createProviderAgentBootstrap(agent.cap, failRetry)
             b1.connect(new InetSocketAddress(agent.host, agent.port))
               .addListener { future: ChannelFuture =>
                 if (future.isSuccess) {
@@ -59,19 +71,19 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def createProviderAgentBootstrap = {
+  private def createProviderAgentBootstrap(cap: CapacityType.Value, failRetry: (CapacityType.Value,BenchmarkRequest) => Unit) = {
     val b = new Bootstrap
     b.group(workerGroup)
       .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .option[lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
-      .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+      .option(ChannelOption.RCVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .option[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
       .option[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
           ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
-          ch.pipeline().addLast(new ProviderAgentHandler)
+          ch.pipeline().addLast(new ProviderAgentHandler(cap, failRetry))
         }
       })
     ServerUtils.setChannelClass(b)
@@ -110,12 +122,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
               case _ =>
                 CapacityType.L
             }
-            val chs = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
-            val i = ThreadLocalRandom.current().nextInt(chs.size)
-            val ch = chs(i)
-            ch.eventLoop().execute { () =>
-              ch.writeAndFlush(BenchmarkRequest(byteBuf, requestId, channel), ch.voidPromise())
-            }
+            val req = BenchmarkRequest(byteBuf, requestId, channel)
+            callProviderAgent(cap, req)
           }))
         }
       })
@@ -130,4 +138,12 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     bossGroup.shutdownGracefully()
   }
 
+  private def callProviderAgent(cap: CapacityType.Value, req: BenchmarkRequest) = {
+    val chs = providerAgents(cap)
+    val i = ThreadLocalRandom.current().nextInt(chs.size)
+    val ch = chs(i)
+    ch.eventLoop().execute { () =>
+      ch.writeAndFlush(req, ch.voidPromise())
+    }
+  }
 }
