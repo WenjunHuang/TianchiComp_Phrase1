@@ -31,7 +31,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   val largeBound = Set(0, 1, 3, 4, 5, 9, 10)
   val mediumBound = Set(2, 6, 7, 11, 12)
   val smallBound = Set(8)
-  val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 1, CapacityType.S -> 1)
+  val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 2, CapacityType.S -> 2)
 
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
@@ -71,7 +71,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def createProviderAgentBootstrap(cap: CapacityType.Value, failRetry: (CapacityType.Value,BenchmarkRequest) => Unit) = {
+  private def createProviderAgentBootstrap(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) = {
     val b = new Bootstrap
     b.group(workerGroup)
       .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
@@ -142,8 +142,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     val chs = providerAgents(cap)
     val i = ThreadLocalRandom.current().nextInt(chs.size)
     val ch = chs(i)
-    ch.eventLoop().execute { () =>
-      ch.writeAndFlush(req, ch.voidPromise())
-    }
+    ch.writeAndFlush(req, ch.voidPromise())
   }
 }
