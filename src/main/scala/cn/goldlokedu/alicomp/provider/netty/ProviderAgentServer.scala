@@ -38,7 +38,6 @@ class ProviderAgentServer(serverHost: String,
     etcdClient.addProvider(RegisteredAgent(cap, name, boundAddress.getHostString, boundAddress.getPort))
       .onComplete(_ => etcdClient.shutdown())
 
-
     serverChannel.closeFuture().sync()
     bossGroup.shutdownGracefully()
   }
