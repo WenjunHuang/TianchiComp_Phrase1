@@ -8,7 +8,7 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption}
+import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption, FixedRecvByteBufAllocator}
 import org.slf4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -23,14 +23,13 @@ class ProviderAgentServer(serverHost: String,
 
   def run(): Unit = {
     val b = new ServerBootstrap()
-      .group(bossGroup,workerGroup)
+      .group(bossGroup, workerGroup)
       .option[java.lang.Integer](ChannelOption.SO_BACKLOG, 1024)
-      .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-      .childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
-      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF,4 * 1024 * 1024)
-      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF,4 * 1024 * 1024)
+      .childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(2 * 1024))
+      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
