@@ -22,14 +22,15 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(2)
+  val bossGroup = ServerUtils.newGroup(4)
   val workerGroup = bossGroup
   var providerAgents: mutable.Map[CapacityType.Value, mutable.Buffer[Channel]] = mutable.Map()
   var serverChannel: Channel = _
 
   val MaxRoll = 13
-  val largeBound = Set(0, 1, 3, 4, 5, 9, 10)
-  val mediumBound = Set(2, 6, 7, 11, 12)
+  //  val largeBound = Set(0, 1, 3, 4, 5, 9, 10, 12)
+  val largeBound = (0 until 13).toSet
+  val mediumBound = Set(2, 6, 7, 11)
   val smallBound = Set(8)
   val connectionCount = Map(CapacityType.L -> 2, CapacityType.M -> 2, CapacityType.S -> 2)
 
