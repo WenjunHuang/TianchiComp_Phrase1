@@ -36,7 +36,9 @@ class ProviderAgentHandler extends ChannelDuplexHandler {
         } {
           workingRequests.remove(requestId) match {
             case Some(channel) =>
-              channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
+              channel.eventLoop().execute { () =>
+                channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
+              }
             case None =>
           }
         }
