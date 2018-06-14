@@ -30,16 +30,20 @@ class ProviderAgentHandler extends ChannelDuplexHandler {
     msg match {
       case buf: ByteBuf =>
         for {
-          isEvent <- DubboMessage.extractIsEvent(buf) if !isEvent
+          isEvent <- DubboMessage.extractIsEvent(buf)
           requestId <- DubboMessage.extractRequestId(buf)
         } {
-          workingRequests.remove(requestId) match {
-            case Some(channel) =>
-              channel.eventLoop().execute { () =>
-                channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
-              }
-            case None =>
-              ReferenceCountUtil.release(buf)
+          if (!isEvent) {
+            workingRequests.remove(requestId) match {
+              case Some(channel) =>
+                channel.eventLoop().execute { () =>
+                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
+                }
+              case None =>
+                ReferenceCountUtil.release(buf)
+            }
+          } else {
+            ReferenceCountUtil.release(buf)
           }
         }
       case any =>
