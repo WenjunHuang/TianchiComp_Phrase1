@@ -65,6 +65,8 @@ object BenchmarkResponse {
         response
     }
 
+    ReferenceCountUtil.release(message)
+
     httpResponse
   }
 }

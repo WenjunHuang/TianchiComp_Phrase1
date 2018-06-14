@@ -1,7 +1,5 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
-import java.util.concurrent.TimeUnit
-
 import cn.goldlokedu.alicomp.documents.{BenchmarkRequest, BenchmarkResponse, DubboMessage}
 import io.netty.buffer.ByteBuf
 import io.netty.channel._
@@ -17,7 +15,8 @@ class ProviderAgentHandler extends ChannelDuplexHandler {
       case req: BenchmarkRequest =>
         workingRequests(req.requestId) = req.replyTo
         ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
-      case _ =>
+      case any =>
+        ReferenceCountUtil.release(any)
     }
   }
 
@@ -40,11 +39,12 @@ class ProviderAgentHandler extends ChannelDuplexHandler {
                 channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
               }
             case None =>
+              ReferenceCountUtil.release(buf)
           }
         }
-      case _ =>
+      case any =>
+        ReferenceCountUtil.release(any)
     }
-    ReferenceCountUtil.release(msg)
   }
 
   override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
