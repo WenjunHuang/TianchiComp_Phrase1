@@ -8,7 +8,7 @@ import cn.goldlokedu.alicomp.etcd.EtcdClient
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.{AdaptiveRecvByteBufAllocator, ChannelInitializer, ChannelOption, FixedRecvByteBufAllocator}
+import io.netty.channel._
 import org.slf4j.Logger
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -31,6 +31,7 @@ class ProviderAgentServer(serverHost: String,
       .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
       .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
+      .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 2 * 1024 * 1024))
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
           ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
