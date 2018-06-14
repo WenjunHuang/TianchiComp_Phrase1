@@ -40,7 +40,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         rest.foreach { agent =>
           println(s"connecting $agent")
           (0 until connectionCount(agent.cap)).foreach { _ =>
-            val b1 = createProviderAgentChannel
+            val b1 = createProviderAgentBootstrap
             b1.connect(new InetSocketAddress(agent.host, agent.port))
               .addListener { future: ChannelFuture =>
                 if (future.isSuccess) {
@@ -59,7 +59,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def createProviderAgentChannel = {
+  private def createProviderAgentBootstrap = {
     val b = new Bootstrap
     b.group(workerGroup)
       .option[lang.Boolean](ChannelOption.TCP_NODELAY, true)
@@ -92,8 +92,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .childOption[java.lang.Boolean](ChannelOption.SO_KEEPALIVE, true)
       .childOption[java.lang.Boolean](ChannelOption.TCP_NODELAY, true)
       .childOption[java.lang.Boolean](ChannelOption.SO_REUSEADDR, true)
-      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 256 * 1024)
-      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 256 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_RCVBUF, 4 * 1024 * 1024)
+      .childOption[java.lang.Integer](ChannelOption.SO_SNDBUF, 4 * 1024 * 1024)
       .childOption[Integer](ChannelOption.MAX_MESSAGES_PER_READ, Integer.MAX_VALUE)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
@@ -115,7 +115,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
             val chs = providerAgents.getOrElse(cap, providerAgents.headOption.map(_._2).get)
             val i = ThreadLocalRandom.current().nextInt(chs.size)
             val ch = chs(i)
-            ch.writeAndFlush(BenchmarkRequest(byteBuf,requestId,channel),ch.voidPromise())
+            ch.eventLoop().execute { () =>
+              ch.writeAndFlush(BenchmarkRequest(byteBuf, requestId, channel), ch.voidPromise())
+            }
           }))
         }
       })
