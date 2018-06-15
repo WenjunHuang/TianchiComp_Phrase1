@@ -6,8 +6,9 @@ import io.netty.channel._
 import io.netty.util.ReferenceCountUtil
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 
-class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
+class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit)(implicit ec:ExecutionContext) extends ChannelDuplexHandler {
   val workingRequests: mutable.LongMap[BenchmarkRequest] = mutable.LongMap()
 
   override def write(ctx: ChannelHandlerContext, msg: scala.Any, promise: ChannelPromise): Unit = {

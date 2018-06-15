@@ -17,6 +17,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:
 
     msg match {
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>
+        val agentChannel = ProviderAgentUtils.chooseProviderAgent()
         Future {
           val requestId = UUID.randomUUID().getLeastSignificantBits
           val decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
@@ -38,7 +39,8 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:
             parameter = param,
             builder
           )
-          sender(builder, requestId, ctx.channel())
+
+          agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
         }
       case any =>
         ReferenceCountUtil.release(any)

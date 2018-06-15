@@ -23,22 +23,18 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(1)
+  val bossGroup = ServerUtils.newGroup(2)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
-
-  val MaxRoll = 13
-  val largeBound = Set(0, 1, 3, 4, 5, 9, 10, 12)
-  //  val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
-  val mediumBound = Set(2, 6, 7, 11)
-  val smallBound = Set(8)
 
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
       case CapacityType.L =>
-        callProviderAgent(CapacityType.M, req)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
       case CapacityType.M =>
-        callProviderAgent(CapacityType.S, req)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
@@ -90,7 +86,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(4))
+    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(2))
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))
@@ -113,24 +109,11 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     bossGroup.shutdownGracefully()
   }
 
-  private def chooseAndCallProvider(byteBuf: ByteBuf, requestId: Long, channel: Channel) = {
-    val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
-    val cap = roll match {
-      case x if largeBound contains x =>
-        CapacityType.L
-      case x if mediumBound contains x =>
-        CapacityType.M
-      case x if smallBound contains x =>
-        CapacityType.S
-      case _ =>
-        CapacityType.L
-    }
+  private def chooseAndCallProvider(byteBuf: ByteBuf,
+                                    requestId: Long,
+                                    channel: Channel) = {
+    val agentChannel = ProviderAgentUtils.chooseProviderAgent()
     val req = BenchmarkRequest(byteBuf, requestId, channel)
-    callProviderAgent(cap, req)
-  }
-
-  private def callProviderAgent(cap: CapacityType.Value, req: Any) = {
-    val chs = ProviderAgentUtils.getProviderAgentChannel(cap)
-    chs.writeAndFlush(req, chs.voidPromise())
+    agentChannel.writeAndFlush(req, agentChannel.voidPromise())
   }
 }
