@@ -13,6 +13,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
+import io.netty.util.ReferenceCountUtil
 
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -37,6 +38,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       case CapacityType.M =>
         callProviderAgent(CapacityType.S, req)
       case CapacityType.S =>
+        ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
 
     }
@@ -47,9 +49,11 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .map { ras =>
         ras.foreach { agent =>
           println(s"connecting $agent")
-          for (eventLoop <- workerGroup) {
-            eventLoop.asInstanceOf[EventLoop].execute { () =>
-              val b1 = createProviderAgentBootstrap(agent.cap, failRetry)
+          workerGroup.next()
+          for (child <- workerGroup) {
+            val eventLoop = child.asInstanceOf[EventLoop]
+            eventLoop.execute { () =>
+              val b1 = createProviderAgentBootstrap(agent.cap, failRetry, eventLoop)
               b1.connect(new InetSocketAddress(agent.host, agent.port))
                 .addListener { future: ChannelFuture =>
                   if (future.isSuccess) {
@@ -67,9 +71,11 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       .onComplete(_ => etcdClient.shutdown())
   }
 
-  private def createProviderAgentBootstrap(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) = {
+  private def createProviderAgentBootstrap(cap: CapacityType.Value,
+                                           failRetry: (CapacityType.Value, BenchmarkRequest) => Unit,
+                                           group: EventLoopGroup) = {
     val b = new Bootstrap
-    b.group(workerGroup)
+    b.group(group)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
           ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))

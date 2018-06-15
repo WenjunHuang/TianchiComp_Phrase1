@@ -24,7 +24,6 @@ object BenchmarkRequest {
                        builder: ByteBuf) = {
     createDubboRequestHeader(builder, requestId)
     createDubboRequestBody(interface, method, parameterTypeString, parameter, builder)
-    builder
   }
 
   @inline

@@ -25,7 +25,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
         val builder = req.content().retain()
         builder.resetReaderIndex()
         builder.resetWriterIndex()
-        val byteBuf = BenchmarkRequest.makeDubboRequest(
+        BenchmarkRequest.makeDubboRequest(
           requestId = requestId,
           interface = interface,
           method = method,
@@ -34,8 +34,8 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Simp
           builder
         )
 
-        sender(byteBuf, requestId, ctx.channel())
-      case any =>
+        sender(builder, requestId, ctx.channel())
+      case _ =>
         ctx.close()
     }
   }

@@ -7,7 +7,7 @@ import io.netty.util.ReferenceCountUtil
 
 import scala.collection.mutable
 
-class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType.Value,BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
+class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
   val workingRequests: mutable.LongMap[BenchmarkRequest] = mutable.LongMap()
 
   override def write(ctx: ChannelHandlerContext, msg: scala.Any, promise: ChannelPromise): Unit = {
@@ -15,7 +15,6 @@ class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType
       case req: BenchmarkRequest =>
         req.byteBuf.retain()
         workingRequests(req.requestId) = req
-
         ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
       case any =>
         ReferenceCountUtil.release(any)
@@ -41,12 +40,11 @@ class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType
               case Some(req) =>
                 if (status == 20) {
                   val channel = req.replyTo
-                  channel.eventLoop().execute { () =>
-                    channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
-                  }
+                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
+
                   ReferenceCountUtil.release(req.byteBuf)
                 } else {
-                  failRetry(cap,req)
+                  failRetry(cap, req)
                 }
               case None =>
                 ReferenceCountUtil.release(buf)

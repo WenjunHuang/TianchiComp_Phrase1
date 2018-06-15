@@ -12,7 +12,6 @@ if [[ "$1" == "consumer" ]]; then
        -Xms1536M \
        -Xmx1536M \
        -XX:NewRatio=1 \
-       -XX:+UseParallelGC \
        -DRUN_TYPE=consumer \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
