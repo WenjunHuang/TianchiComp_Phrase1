@@ -12,9 +12,7 @@ class RelayHandler(relayChannel: Channel) extends ChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
     if (relayChannel.isActive) {
-      relayChannel.eventLoop().execute { () =>
-        relayChannel.writeAndFlush(msg, relayChannel.voidPromise())
-      }
+      relayChannel.writeAndFlush(msg, relayChannel.voidPromise())
     }
     else
       ReferenceCountUtil.release(msg)
@@ -26,7 +24,7 @@ class RelayHandler(relayChannel: Channel) extends ChannelInboundHandlerAdapter {
   }
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit = {
-    if (relayChannel.isActive())
+    if (relayChannel.isActive)
       ServerUtils.closeOnFlush(relayChannel)
   }
 

@@ -23,7 +23,6 @@ elif [[ "$1" == "provider-small" ]]; then
        -Xms512M \
        -Xmx512M \
        -XX:NewRatio=1 \
-       -XX:+UseParallelGC \
        -DRUN_TYPE=provider-small \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
@@ -38,7 +37,6 @@ elif [[ "$1" == "provider-medium" ]]; then
        -Xms1536M \
        -Xmx1536M \
        -XX:NewRatio=1 \
-       -XX:+UseParallelGC \
        -DRUN_TYPE=provider-medium \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
@@ -53,7 +51,6 @@ elif [[ "$1" == "provider-large" ]]; then
        -Xms2560M \
        -Xmx2560M \
        -XX:NewRatio=1 \
-       -XX:+UseParallelGC \
        -DRUN_TYPE=provider-large \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \

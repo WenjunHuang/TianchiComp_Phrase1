@@ -2,7 +2,6 @@ package cn.goldlokedu.alicomp.provider.netty
 
 import cn.goldlokedu.alicomp.util.{DirectClientHandler, RelayHandler}
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel._
 import io.netty.util.concurrent.Future
 import org.slf4j.Logger

@@ -2,7 +2,7 @@ package cn.goldlokedu.alicomp.documents
 
 import java.nio.charset.StandardCharsets
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator, ByteBufUtil, Unpooled}
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.handler.codec.http.{DefaultFullHttpResponse, FullHttpResponse, HttpResponseStatus, HttpVersion}
 import io.netty.util.{AsciiString, ReferenceCountUtil}
 
