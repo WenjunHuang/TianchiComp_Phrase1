@@ -7,25 +7,20 @@ import io.netty.util.ReferenceCountUtil
 
 import scala.collection.mutable
 
-class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
+class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
   val workingRequests: mutable.LongMap[BenchmarkRequest] = mutable.LongMap()
 
   override def write(ctx: ChannelHandlerContext, msg: scala.Any, promise: ChannelPromise): Unit = {
     msg match {
       case req: BenchmarkRequest =>
-        req.byteBuf.retain()
         workingRequests(req.requestId) = req
+
+        req.byteBuf.retain()
         ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
       case any =>
         ReferenceCountUtil.release(any)
     }
   }
-
-  //  override def channelActive(ctx: ChannelHandlerContext): Unit = {
-  //    ctx.channel().eventLoop().scheduleAtFixedRate({ () =>
-  //      println(s"avg latency = $latencyAverge ms, total = $total")
-  //    }, 30, 1, TimeUnit.SECONDS)
-  //  }
 
   override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
     msg match {
@@ -38,11 +33,11 @@ class ProviderAgentHandler(val cap: CapacityType.Value, failRetry: (CapacityType
           if (!isEvent) {
             workingRequests.remove(requestId) match {
               case Some(req) =>
+                ReferenceCountUtil.release(req.byteBuf)
+
                 if (status == 20) {
                   val channel = req.replyTo
                   channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
-
-                  ReferenceCountUtil.release(req.byteBuf)
                 } else {
                   failRetry(cap, req)
                 }
