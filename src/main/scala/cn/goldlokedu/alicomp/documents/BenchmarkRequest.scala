@@ -34,14 +34,6 @@ object BenchmarkRequest {
 
   @inline
   private def createDubboRequestBody(interface: String, method: String, parameterTypeString: String, parameter: String, byteBuf: ByteBuf) = {
-    //    val body = DubboVersion + "\n" +
-    //      s""""$interface"""" + "\n" +
-    //      RequestVersion + "\n" +
-    //      s""""$method"""" + "\n" +
-    //      s""""$parameterTypeString"""" + "\n" +
-    //      s""""${parameter}"""" + "\n" +
-    //      s"{}"
-
     val bodyBuilder = new StringBuilder
     bodyBuilder.append(DubboVersion)
     bodyBuilder.append('\n')

@@ -26,9 +26,9 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   var serverChannel: Channel = _
 
   val MaxRoll = 13
-  //  val largeBound = Set(0, 1, 3, 4, 5, 9, 10, 12)
-  val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
-  val mediumBound = Set(5)
+  val largeBound = Set(0, 1, 3, 4, 5, 9, 10, 12)
+  //  val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
+  val mediumBound = Set(2, 6, 7, 11)
   val smallBound = Set(8)
 
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
@@ -96,6 +96,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
             val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
             val cap = roll match {
