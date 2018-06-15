@@ -78,7 +78,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
-          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(1024, DubboMessage.HeaderSize, 4))
+          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
           ch.pipeline().addLast(new ProviderAgentHandler(cap, failRetry))
         }
       })
