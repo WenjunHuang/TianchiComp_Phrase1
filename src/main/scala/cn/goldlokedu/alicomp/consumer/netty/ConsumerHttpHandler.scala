@@ -25,7 +25,6 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
           decoder.destroy()
 
           val builder = req.content()
-          builder.retain()
           builder.resetReaderIndex()
           builder.resetWriterIndex()
 

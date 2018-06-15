@@ -127,7 +127,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     callProviderAgent(cap, req)
   }
 
-  private def callProviderAgent(cap: CapacityType.Value, req: BenchmarkRequest) = {
+  private def callProviderAgent(cap: CapacityType.Value, req: Any) = {
     val chs = ProviderAgentUtils.getProviderAgentChannel(cap)
     chs.writeAndFlush(req, chs.voidPromise())
   }

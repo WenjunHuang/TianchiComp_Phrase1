@@ -13,6 +13,7 @@ if [[ "$1" == "consumer" ]]; then
        -Xmx1536M \
        -XX:NewRatio=1 \
        -DRUN_TYPE=consumer \
+       -Dio.netty.threadLocalDirectBufferSize=65536 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DHTTP_LISTENING_PORT=20000 \
@@ -23,6 +24,7 @@ elif [[ "$1" == "provider-small" ]]; then
        -Xms512M \
        -Xmx512M \
        -XX:NewRatio=1 \
+       -Dio.netty.threadLocalDirectBufferSize=65536 \
        -DRUN_TYPE=provider-small \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
@@ -38,6 +40,7 @@ elif [[ "$1" == "provider-medium" ]]; then
        -Xmx1536M \
        -XX:NewRatio=1 \
        -DRUN_TYPE=provider-medium \
+       -Dio.netty.threadLocalDirectBufferSize=65536 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
@@ -52,6 +55,7 @@ elif [[ "$1" == "provider-large" ]]; then
        -Xmx2560M \
        -XX:NewRatio=1 \
        -DRUN_TYPE=provider-large \
+       -Dio.netty.threadLocalDirectBufferSize=65536 \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \

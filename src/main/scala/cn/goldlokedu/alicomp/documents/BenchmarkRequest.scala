@@ -1,9 +1,10 @@
 package cn.goldlokedu.alicomp.documents
 
 
-import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
-import io.netty.util.CharsetUtil
+
+
 
 case class BenchmarkRequest(byteBuf: ByteBuf, requestId: Long, replyTo: Channel)
 
