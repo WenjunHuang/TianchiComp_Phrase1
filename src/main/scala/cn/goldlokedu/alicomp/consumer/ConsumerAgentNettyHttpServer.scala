@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(2)
+  val bossGroup = ServerUtils.newGroup(1)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
@@ -86,7 +86,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(2))
+    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool())
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))
