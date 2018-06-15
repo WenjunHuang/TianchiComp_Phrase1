@@ -4,9 +4,9 @@ import java.util.UUID
 
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest
 import io.netty.buffer.ByteBuf
-import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter, SimpleChannelInboundHandler}
+import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostRequestDecoder, HttpPostStandardRequestDecoder}
+import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostStandardRequestDecoder}
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 
 class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends ChannelInboundHandlerAdapter {
@@ -25,6 +25,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
           decoder.destroy()
 
           val builder = req.content()
+          builder.retain()
           builder.resetReaderIndex()
           builder.resetWriterIndex()
 

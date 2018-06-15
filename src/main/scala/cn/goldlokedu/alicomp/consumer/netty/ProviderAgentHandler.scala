@@ -15,7 +15,6 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
       case req: BenchmarkRequest =>
         workingRequests(req.requestId) = req
 
-        req.byteBuf.retain()
         ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
       case any =>
         ReferenceCountUtil.release(any)
@@ -33,11 +32,10 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
           if (!isEvent) {
             workingRequests.remove(requestId) match {
               case Some(req) =>
-                ReferenceCountUtil.release(req.byteBuf)
-
                 if (status == 20) {
+                  ReferenceCountUtil.release(req.byteBuf)
                   val channel = req.replyTo
-                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf),channel.voidPromise())
+                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
                 } else {
                   failRetry(cap, req)
                 }

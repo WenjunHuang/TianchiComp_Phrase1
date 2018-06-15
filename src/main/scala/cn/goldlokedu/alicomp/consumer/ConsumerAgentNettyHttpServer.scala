@@ -8,6 +8,7 @@ import cn.goldlokedu.alicomp.documents.{CapacityType, _}
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import cn.goldlokedu.alicomp.provider.netty.ServerUtils
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
+import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
@@ -96,21 +97,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
-          pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
-            val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
-            val cap = roll match {
-              case x if largeBound contains x =>
-                CapacityType.L
-              case x if mediumBound contains x =>
-                CapacityType.M
-              case x if smallBound contains x =>
-                CapacityType.S
-              case _ =>
-                CapacityType.L
-            }
-            val req = BenchmarkRequest(byteBuf, requestId, channel)
-            callProviderAgent(cap, req)
-          }))
+          pipeline.addLast("handler", new ConsumerHttpHandler(chooseAndCallProvider))
         }
       })
 
@@ -122,6 +109,22 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     connectProviderAgents()
     serverChannel.closeFuture().sync()
     bossGroup.shutdownGracefully()
+  }
+
+  private def chooseAndCallProvider(byteBuf: ByteBuf, requestId: Long, channel: Channel) = {
+    val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
+    val cap = roll match {
+      case x if largeBound contains x =>
+        CapacityType.L
+      case x if mediumBound contains x =>
+        CapacityType.M
+      case x if smallBound contains x =>
+        CapacityType.S
+      case _ =>
+        CapacityType.L
+    }
+    val req = BenchmarkRequest(byteBuf, requestId, channel)
+    callProviderAgent(cap, req)
   }
 
   private def callProviderAgent(cap: CapacityType.Value, req: BenchmarkRequest) = {
