@@ -96,7 +96,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
           pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
-          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("handler", new ConsumerHttpHandler({ (byteBuf, requestId, channel) =>
             val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
             val cap = roll match {
