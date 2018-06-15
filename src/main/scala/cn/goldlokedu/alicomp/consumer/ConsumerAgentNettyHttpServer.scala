@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
-import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.{ForkJoinPool, ThreadLocalRandom}
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler, ProviderAgentUtils}
 import cn.goldlokedu.alicomp.documents.{CapacityType, _}
@@ -17,12 +17,13 @@ import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
 
 import scala.collection.convert.ImplicitConversions._
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits._
 
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(4)
+  val bossGroup = ServerUtils.newGroup(1)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
@@ -89,6 +90,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
+    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(4))
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))

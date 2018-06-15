@@ -9,13 +9,15 @@ import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostStandardRequestDecoder}
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 
-class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends ChannelInboundHandlerAdapter {
+import scala.concurrent.{ExecutionContext, Future}
+
+class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:ExecutionContext) extends ChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
     msg match {
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>
-        ctx.channel().eventLoop().execute { () =>
+        Future {
           val requestId = UUID.randomUUID().getLeastSignificantBits
           val decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
           val interface = decoder.getBodyHttpData("interface").asInstanceOf[HttpData].getString
@@ -36,7 +38,6 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
             parameter = param,
             builder
           )
-
           sender(builder, requestId, ctx.channel())
         }
       case any =>
