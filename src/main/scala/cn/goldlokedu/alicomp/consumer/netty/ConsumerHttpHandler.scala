@@ -16,6 +16,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
     msg match {
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>
         ctx.channel().eventLoop().execute { () =>
+          val requestId = UUID.randomUUID().getLeastSignificantBits
           val decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
           val interface = decoder.getBodyHttpData("interface").asInstanceOf[HttpData].getString
           val method = decoder.getBodyHttpData("method").asInstanceOf[HttpData].getString
@@ -23,10 +24,10 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
           val param = decoder.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
           decoder.destroy()
 
-          val requestId = UUID.randomUUID().getLeastSignificantBits
           val builder = req.content()
           builder.resetReaderIndex()
           builder.resetWriterIndex()
+
           BenchmarkRequest.makeDubboRequest(
             requestId = requestId,
             interface = interface,

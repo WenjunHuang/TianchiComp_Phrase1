@@ -37,7 +37,7 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
 
                 if (status == 20) {
                   val channel = req.replyTo
-                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
+                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf),channel.voidPromise())
                 } else {
                   failRetry(cap, req)
                 }
