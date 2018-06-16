@@ -86,7 +86,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool())
+    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(4))
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))
