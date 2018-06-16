@@ -6,8 +6,8 @@ import io.netty.util.concurrent
 import io.netty.util.concurrent.FastThreadLocal
 
 object ProviderAgentUtils {
-  val MaxRoll = 13
-  val largeBound = Set(1, 3, 4, 6, 9, 10, 12)
+  val MaxRoll = 12
+  val largeBound = Set(1, 3, 4, 6, 9, 10)
   //  val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
   val mediumBound = Set(2, 5, 8, 11)
   //  val mediumBound = Nil
