@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
-import java.util.concurrent.{ForkJoinPool, ThreadLocalRandom}
+import java.util.concurrent.ForkJoinPool
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler, ProviderAgentUtils}
 import cn.goldlokedu.alicomp.documents.{CapacityType, _}
@@ -17,8 +17,7 @@ import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
 
 import scala.collection.convert.ImplicitConversions._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
@@ -42,7 +41,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     }
   }
 
-  private def connectProviderAgents() = {
+  private def connectProviderAgents()(implicit ec:ExecutionContext) = {
     etcdClient.providers()
       .map { ras =>
         ras.foreach { agent =>
@@ -71,7 +70,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   private def createProviderAgentBootstrap(cap: CapacityType.Value,
                                            failRetry: (CapacityType.Value, BenchmarkRequest) => Unit,
-                                           group: EventLoopGroup) = {
+                                           group: EventLoopGroup)(implicit ec:ExecutionContext) = {
     val b = new Bootstrap
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
@@ -86,7 +85,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(3))
+    implicit val ec: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(new ForkJoinPool(2))
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))
