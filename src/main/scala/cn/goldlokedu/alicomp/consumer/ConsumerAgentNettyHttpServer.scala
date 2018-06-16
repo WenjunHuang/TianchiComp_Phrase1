@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
-import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.{Executors, ForkJoinPool, ThreadPoolExecutor}
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler, ProviderAgentUtils}
 import cn.goldlokedu.alicomp.documents.{CapacityType, _}
@@ -41,7 +41,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     }
   }
 
-  private def connectProviderAgents()(implicit ec:ExecutionContext) = {
+  private def connectProviderAgents()(implicit ec: ExecutionContext) = {
     etcdClient.providers()
       .map { ras =>
         ras.foreach { agent =>
@@ -70,7 +70,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   private def createProviderAgentBootstrap(cap: CapacityType.Value,
                                            failRetry: (CapacityType.Value, BenchmarkRequest) => Unit,
-                                           group: EventLoopGroup)(implicit ec:ExecutionContext) = {
+                                           group: EventLoopGroup)(implicit ec: ExecutionContext) = {
     val b = new Bootstrap
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
@@ -85,7 +85,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(new ForkJoinPool(2))
+    implicit val ec: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))
