@@ -96,7 +96,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
-          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+//          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler(chooseAndCallProvider))
         }
       })

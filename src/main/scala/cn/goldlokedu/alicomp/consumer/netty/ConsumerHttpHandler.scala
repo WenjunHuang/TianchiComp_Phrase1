@@ -11,11 +11,45 @@ import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:ExecutionContext) extends ChannelInboundHandlerAdapter {
+class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec: ExecutionContext) extends ChannelInboundHandlerAdapter {
+  var decoder: HttpPostStandardRequestDecoder = _
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
     msg match {
+      case req: HttpRequest =>
+        decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
+      case last: LastHttpContent =>
+        decoder.offer(last)
+        ReferenceCountUtil.release(last)
+        val d = decoder
+        decoder = null
+        val agentChannel = ProviderAgentUtils.chooseProviderAgent()
+        Future {
+          val requestId = UUID.randomUUID().getLeastSignificantBits
+          val interface = d.getBodyHttpData("interface").asInstanceOf[HttpData].getString
+          val method = d.getBodyHttpData("method").asInstanceOf[HttpData].getString
+          val pts = d.getBodyHttpData("parameterTypesString").asInstanceOf[HttpData].getString
+          val param = d.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
+          d.destroy()
+
+          val builder = ctx.alloc().buffer(2 * 1024)
+          //          builder.resetReaderIndex()
+          //          builder.resetWriterIndex()
+
+          BenchmarkRequest.makeDubboRequest(
+            requestId = requestId,
+            interface = interface,
+            method = method,
+            parameterTypeString = pts,
+            parameter = param,
+            builder
+          )
+          agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
+        }
+      case body: HttpContent =>
+        decoder.offer(body)
+        ReferenceCountUtil.release(body)
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>
         val agentChannel = ProviderAgentUtils.chooseProviderAgent()
         Future {
