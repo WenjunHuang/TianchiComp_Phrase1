@@ -14,6 +14,7 @@ if [[ "$1" == "consumer" ]]; then
        -XX:NewRatio=1 \
        -DRUN_TYPE=consumer \
        -Dio.netty.threadLocalDirectBufferSize=65536 \
+       -Dio.netty.leakDetection.level=disable \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DHTTP_LISTENING_PORT=20000 \
@@ -25,6 +26,7 @@ elif [[ "$1" == "provider-small" ]]; then
        -Xmx512M \
        -XX:NewRatio=1 \
        -Dio.netty.threadLocalDirectBufferSize=65536 \
+       -Dio.netty.leakDetection.level=disable \
        -DRUN_TYPE=provider-small \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
@@ -41,6 +43,7 @@ elif [[ "$1" == "provider-medium" ]]; then
        -XX:NewRatio=1 \
        -DRUN_TYPE=provider-medium \
        -Dio.netty.threadLocalDirectBufferSize=65536 \
+       -Dio.netty.leakDetection.level=disable \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \
@@ -56,6 +59,7 @@ elif [[ "$1" == "provider-large" ]]; then
        -XX:NewRatio=1 \
        -DRUN_TYPE=provider-large \
        -Dio.netty.threadLocalDirectBufferSize=65536 \
+       -Dio.netty.leakDetection.level=disable \
        -DETCD_HOST=${ETCD_HOST} \
        -DETCD_PORT=${ETCD_PORT} \
        -DDUBBO_PROVIDER_PORT=${DUBBO_PORT} \

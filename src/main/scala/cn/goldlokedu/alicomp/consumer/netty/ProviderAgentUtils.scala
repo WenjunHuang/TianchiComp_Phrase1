@@ -1,17 +1,16 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
-import java.util.concurrent.ThreadLocalRandom
-
 import cn.goldlokedu.alicomp.documents.CapacityType
 import io.netty.channel.Channel
 import io.netty.util.concurrent
+import io.netty.util.concurrent.FastThreadLocal
 
 object ProviderAgentUtils {
   val MaxRoll = 13
   val largeBound = Set(0, 1, 3, 4, 5, 9, 10, 12)
   //  val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
-  val mediumBound = Set(2, 6, 7, 11)
-  val smallBound = Set(8)
+  val mediumBound = Set(2, 6, 7, 11,8)
+  val smallBound = Nil
 
   def setProviderAgentChannel(cap: CapacityType.Value, channel: Channel) = {
     cap match {
@@ -36,9 +35,17 @@ object ProviderAgentUtils {
     }
   }
 
-  def chooseProviderAgent():Channel = {
-    val roll = ThreadLocalRandom.current().nextInt(MaxRoll)
-    val cap = roll match {
+  def chooseProviderAgent(): Channel = {
+    val roll = if (Roll.isSet) {
+      val v = Roll.get() + 1
+      Roll.set(v)
+      v
+    } else {
+      Roll.set(0)
+      0
+    }
+
+    val cap = roll % MaxRoll match {
       case x if largeBound contains x =>
         CapacityType.L
       case x if mediumBound contains x =>
@@ -54,4 +61,5 @@ object ProviderAgentUtils {
   private val LargeAgent = new concurrent.FastThreadLocal[Channel]()
   private val MediumAgent = new concurrent.FastThreadLocal[Channel]()
   private val SmallAgent = new concurrent.FastThreadLocal[Channel]()
+  private val Roll = new FastThreadLocal[Int]()
 }

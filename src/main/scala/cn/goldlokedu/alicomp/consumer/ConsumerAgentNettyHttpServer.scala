@@ -37,7 +37,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
-
     }
   }
 
