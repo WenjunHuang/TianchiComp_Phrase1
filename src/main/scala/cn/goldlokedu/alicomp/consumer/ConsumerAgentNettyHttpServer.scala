@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
-import java.util.concurrent.{Executors, ForkJoinPool, ThreadPoolExecutor}
+import java.util.concurrent.Executors
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler, ProviderAgentUtils}
 import cn.goldlokedu.alicomp.documents.{CapacityType, _}
@@ -12,7 +12,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
+import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
 
@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(2)
+  val bossGroup = ServerUtils.newGroup(1)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
