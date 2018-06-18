@@ -22,22 +22,22 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(1)
+  val bossGroup = ServerUtils.newGroup(4)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
       case CapacityType.L =>
-        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
-        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-        ReferenceCountUtil.release(req.byteBuf)
-        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+      //        ReferenceCountUtil.release(req.byteBuf)
+      //        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.M =>
-        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
-        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-        ReferenceCountUtil.release(req.byteBuf)
-        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+      //        ReferenceCountUtil.release(req.byteBuf)
+      //        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
@@ -96,7 +96,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
-//          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+          //          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
           pipeline.addLast("handler", new ConsumerHttpHandler(chooseAndCallProvider))
         }
       })
