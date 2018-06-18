@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(1)
+  val bossGroup = ServerUtils.newGroup(4)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
