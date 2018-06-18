@@ -29,15 +29,15 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
       case CapacityType.L =>
-//        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
-//        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-              ReferenceCountUtil.release(req.byteBuf)
-              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+//              ReferenceCountUtil.release(req.byteBuf)
+//              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.M =>
-//        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
-//        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-              ReferenceCountUtil.release(req.byteBuf)
-              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+//              ReferenceCountUtil.release(req.byteBuf)
+//              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)

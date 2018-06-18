@@ -13,45 +13,18 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec: ExecutionContext) extends ChannelInboundHandlerAdapter {
-  var decoder: HttpPostStandardRequestDecoder = _
   val contents: mutable.Buffer[HttpContent] = mutable.Buffer()
-
-  private def useFuture(ctx: ChannelHandlerContext) = {
-    val d = decoder
-    decoder = null
-    val agentChannel = ProviderAgentUtils.chooseProviderAgent()
-    Future {
-      val requestId = UUID.randomUUID().getLeastSignificantBits
-      val interface = d.getBodyHttpData("interface").asInstanceOf[HttpData].getString
-      val method = d.getBodyHttpData("method").asInstanceOf[HttpData].getString
-      val pts = d.getBodyHttpData("parameterTypesString").asInstanceOf[HttpData].getString
-      val param = d.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
-      d.destroy()
-
-      val builder = ctx.alloc().buffer(2 * 1024)
-      //          builder.resetReaderIndex()
-      //          builder.resetWriterIndex()
-
-      BenchmarkRequest.makeDubboRequest(
-        requestId = requestId,
-        interface = interface,
-        method = method,
-        parameterTypeString = pts,
-        parameter = param,
-        builder
-      )
-      agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
-    }
-  }
+  var size = 0
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
     msg match {
       case req: HttpRequest =>
+        size = req.headers().getInt(HttpHeaderNames.CONTENT_LENGTH)
       case last: LastHttpContent =>
         contents += last
         val cb = ctx.alloc().compositeBuffer(contents.size)
-        cb.addComponents(true, contents.map{it=>
+        cb.addComponents(true, contents.map { it =>
           val content = it.content.retain()
           it.release()
           content
