@@ -10,7 +10,7 @@ import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
-import io.netty.handler.codec.{FixedLengthFrameDecoder, LengthFieldBasedFrameDecoder}
+import io.netty.handler.codec.FixedLengthFrameDecoder
 import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
@@ -27,15 +27,15 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
       case CapacityType.L =>
-        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
-        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-        ReferenceCountUtil.release(req.byteBuf)
-        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+      //        ReferenceCountUtil.release(req.byteBuf)
+      //        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.M =>
-        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
-        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-        ReferenceCountUtil.release(req.byteBuf)
-        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+      //        ReferenceCountUtil.release(req.byteBuf)
+      //        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
