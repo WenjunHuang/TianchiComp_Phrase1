@@ -7,7 +7,7 @@ import io.netty.buffer.{ByteBuf, CompositeByteBuf}
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostStandardRequestDecoder}
-import io.netty.util.{CharsetUtil, ReferenceCountUtil}
+import io.netty.util.{ByteProcessor, CharsetUtil, ReferenceCountUtil}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,38 +16,93 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:
   var decoder: HttpPostStandardRequestDecoder = _
   val contents: mutable.Buffer[HttpContent] = mutable.Buffer()
 
+  private def useFuture(ctx: ChannelHandlerContext) = {
+    val d = decoder
+    decoder = null
+    val agentChannel = ProviderAgentUtils.chooseProviderAgent()
+    Future {
+      val requestId = UUID.randomUUID().getLeastSignificantBits
+      val interface = d.getBodyHttpData("interface").asInstanceOf[HttpData].getString
+      val method = d.getBodyHttpData("method").asInstanceOf[HttpData].getString
+      val pts = d.getBodyHttpData("parameterTypesString").asInstanceOf[HttpData].getString
+      val param = d.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
+      d.destroy()
+
+      val builder = ctx.alloc().buffer(2 * 1024)
+      //          builder.resetReaderIndex()
+      //          builder.resetWriterIndex()
+
+      BenchmarkRequest.makeDubboRequest(
+        requestId = requestId,
+        interface = interface,
+        method = method,
+        parameterTypeString = pts,
+        parameter = param,
+        builder
+      )
+      agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
+    }
+  }
+
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
     msg match {
       case req: HttpRequest =>
-        decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
       case last: LastHttpContent =>
         contents += last
-        val d = decoder
-        decoder = null
+        val cb = ctx.alloc().compositeBuffer(contents.size)
+        cb.addComponents(true, contents.map{it=>
+          val content = it.content.retain()
+          it.release()
+          content
+        }: _*)
+        contents.clear()
+
+
+        var resolveName = true
+        var nameStart = 0
+        var nameEnd = 0
+        var valueStart = 0
+        var valueEnd = 0
+        var index = 0
+        var newName: ByteBuf = null
+        val params = mutable.Map[String, ByteBuf]()
+
+        cb.forEachByte((value: Byte) => {
+          index += 1
+          if (resolveName) {
+            if (value == '='.toByte) {
+              valueStart = index
+              valueEnd = valueStart
+
+              newName = cb.slice(nameStart, nameEnd - nameStart)
+              resolveName = false
+            } else {
+              nameEnd += 1
+            }
+          } else {
+            if (value == '&'.toByte) {
+              nameStart = index
+              nameEnd = nameStart
+              val newValue = cb.slice(valueStart, valueEnd - valueStart)
+              val name = newName.toString(CharsetUtil.UTF_8)
+              params(name) = newValue
+              resolveName = true
+            } else {
+              valueEnd += 1
+            }
+          }
+
+          true
+        })
+        params(newName.toString(CharsetUtil.UTF_8)) = cb.slice(valueStart, valueEnd - valueStart)
+
+        val requestId = UUID.randomUUID().getLeastSignificantBits
+        val buffer = BenchmarkRequest.makeDubboRequest(requestId, params.get("parameter").get.retain(), ctx.alloc())
         val agentChannel = ProviderAgentUtils.chooseProviderAgent()
-        Future {
-          val requestId = UUID.randomUUID().getLeastSignificantBits
-          val interface = d.getBodyHttpData("interface").asInstanceOf[HttpData].getString
-          val method = d.getBodyHttpData("method").asInstanceOf[HttpData].getString
-          val pts = d.getBodyHttpData("parameterTypesString").asInstanceOf[HttpData].getString
-          val param = d.getBodyHttpData("parameter").asInstanceOf[HttpData].getString
-          d.destroy()
+        agentChannel.writeAndFlush(BenchmarkRequest(buffer, requestId, ctx.channel()), agentChannel.voidPromise())
 
-          val builder = ctx.alloc().buffer(2 * 1024)
-          //          builder.resetReaderIndex()
-          //          builder.resetWriterIndex()
-
-          BenchmarkRequest.makeDubboRequest(
-            requestId = requestId,
-            interface = interface,
-            method = method,
-            parameterTypeString = pts,
-            parameter = param,
-            builder
-          )
-          agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
-        }
+        ReferenceCountUtil.release(cb)
       case body: HttpContent =>
         contents += body
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>

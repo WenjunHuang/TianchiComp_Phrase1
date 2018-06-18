@@ -12,7 +12,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.http.HttpServerCodec
+import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
 
@@ -96,7 +96,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
-          //          pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+//                    pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+//          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("handler", new ConsumerHttpHandler(chooseAndCallProvider))
         }
       })

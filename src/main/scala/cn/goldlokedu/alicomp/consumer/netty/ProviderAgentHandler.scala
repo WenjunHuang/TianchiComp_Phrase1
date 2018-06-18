@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
 import cn.goldlokedu.alicomp.documents._
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBuf, ByteBufUtil}
 import io.netty.channel._
 import io.netty.util.ReferenceCountUtil
 
