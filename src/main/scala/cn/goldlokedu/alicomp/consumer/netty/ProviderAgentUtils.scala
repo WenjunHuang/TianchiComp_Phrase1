@@ -7,12 +7,12 @@ import io.netty.util.concurrent.FastThreadLocal
 
 object ProviderAgentUtils {
   val MaxRoll = 12
-//  val largeBound = Set(0, 1, 2, 6, 7, 10)
-    val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
-//  val mediumBound = Set(3, 4, 8, 9, 11)
-    val mediumBound = Nil
-    val smallBound = Nil
-//  val smallBound = Set(5)
+  val largeBound = Set(0, 1, 2, 6, 7, 10)
+  //    val largeBound = Set(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12)
+  val mediumBound = Set(3, 4, 8, 9, 11)
+  //    val mediumBound = Nil
+  //    val smallBound = Nil
+  val smallBound = Set(5)
 
   def setProviderAgentChannel(cap: CapacityType.Value, channel: Channel) = {
     cap match {

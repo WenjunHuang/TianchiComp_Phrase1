@@ -34,18 +34,15 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
               val channel = req.replyTo
               channel.writeAndFlush(BenchmarkResponse.toHttpResponse(result), channel.voidPromise())
             } else {
-              ReferenceCountUtil.release(buf)
-
               ctx.executor().execute { () =>
                 failRetry(cap, req)
               }
             }
           case None =>
-            ReferenceCountUtil.release(buf)
         }
-      case any =>
-        ReferenceCountUtil.release(any)
+      case _ =>
     }
+    ReferenceCountUtil.release(msg)
   }
 
   override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
