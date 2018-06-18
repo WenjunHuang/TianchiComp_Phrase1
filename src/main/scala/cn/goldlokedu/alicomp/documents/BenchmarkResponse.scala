@@ -35,24 +35,7 @@ object BenchmarkResponse {
     dubboMessage.readerIndex(dubboMessage.readerIndex() + DubboMessage.HeaderWithLength + 2)
     dubboMessage.writerIndex(dubboMessage.writerIndex() - 1)
     val result = if (status.get == 20) {
-      if (dubboMessage.getByte(dubboMessage.readerIndex()) == 45) {
-        // 负数
-        dubboMessage.readByte()
-        var accum = 0
-        dubboMessage.forEachByte((b: Byte) => {
-          accum = accum * 10 + (b - 48) // 数字的ascii码-48=数字值
-          true
-        })
-        Some(-accum)
-      } else {
-        // 正数
-        var accum = 0
-        dubboMessage.forEachByte((b: Byte) => {
-          accum = accum * 10 + (b - 48) // 数字的ascii码-48=数字值
-          true
-        })
-        Some(accum)
-      }
+      Some(dubboMessage.retainedSlice())
     } else
       None
 
@@ -60,9 +43,8 @@ object BenchmarkResponse {
       case None =>
         errorHttpResponse
       case Some(value) =>
-        val buf = Unpooled.copiedBuffer(String.valueOf(value), StandardCharsets.UTF_8)
         val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
-          HttpResponseStatus.OK, buf)
+          HttpResponseStatus.OK, value)
         response.headers().set(CONTENT_TYPE, TEXT_PLAIN)
         response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes())
         response.headers().set(CONNECTION, KEEP_ALIVE)
