@@ -10,9 +10,6 @@ case class BenchmarkRequest(byteBuf: ByteBuf, requestId: Long, replyTo: Channel)
 
 object BenchmarkRequest {
   // fastjson 的字符串需要带上""
-  //  val DubboVersion = Unpooled.copiedBuffer("\"2.6.0\"", CharsetUtil.UTF_8)
-  //  val RequestVersion = Unpooled.copiedBuffer("\"0.0.0\"", CharsetUtil.UTF_8)
-  //  val Trail = Unpooled.copiedBuffer("{}", CharsetUtil.UTF_8)
   val DubboVersion = "\"2.6.0\""
   val RequestVersion = "\"0.0.0\""
   val Trail = "{}"
