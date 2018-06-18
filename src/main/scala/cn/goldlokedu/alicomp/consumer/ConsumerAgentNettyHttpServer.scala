@@ -27,15 +27,15 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
   private def failRetry(cap: CapacityType.Value, req: BenchmarkRequest) = {
     cap match {
       case CapacityType.L =>
-        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
-        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-//              ReferenceCountUtil.release(req.byteBuf)
-//              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.M)
+        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+        ReferenceCountUtil.release(req.byteBuf)
+        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.M =>
-        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
-        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
-//              ReferenceCountUtil.release(req.byteBuf)
-//              req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
+        //        val agentChannel = ProviderAgentUtils.getProviderAgentChannel(CapacityType.S)
+        //        agentChannel.writeAndFlush(req, agentChannel.voidPromise())
+        ReferenceCountUtil.release(req.byteBuf)
+        req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
       case CapacityType.S =>
         ReferenceCountUtil.release(req.byteBuf)
         req.replyTo.writeAndFlush(BenchmarkResponse.errorHttpResponse)
@@ -77,7 +77,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
-//          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
+          //          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
           ch.pipeline().addFirst(new FixedLengthFrameDecoder(14))
           ch.pipeline().addLast(new ProviderAgentHandler(cap, failRetry))
         }
@@ -95,8 +95,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
         override def initChannel(ch: SocketChannel): Unit = {
           val pipeline = ch.pipeline()
           pipeline.addLast("codec", new HttpServerCodec())
-//                    pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
-//          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
+          //                    pipeline.addLast("aggregator", new HttpObjectAggregator(2 * 1024))
+          //          pipeline.addLast(new LoggingHandler(LogLevel.INFO))
           pipeline.addLast("handler", new ConsumerHttpHandler(chooseAndCallProvider))
         }
       })
