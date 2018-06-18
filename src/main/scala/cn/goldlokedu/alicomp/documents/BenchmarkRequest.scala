@@ -2,7 +2,7 @@ package cn.goldlokedu.alicomp.documents
 
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator, Unpooled}
-import io.netty.channel.Channel
+import io.netty.channel.{Channel, ChannelHandlerContext}
 import io.netty.util.CharsetUtil
 
 
@@ -18,6 +18,15 @@ object BenchmarkRequest {
   val magic = 0xdabb
   //req + 2way + event + serialization id + status
   val req = 0xc600
+
+  def writePrivateRequest(ctx: ChannelHandlerContext, req: BenchmarkRequest) = {
+    ctx.channel().eventLoop().execute { () =>
+      ctx.write(Unpooled.copyLong(req.requestId), ctx.voidPromise())
+      ctx.write(Unpooled.copyInt(req.byteBuf.readableBytes()), ctx.voidPromise())
+      ctx.write(req.byteBuf, ctx.voidPromise())
+      ctx.flush()
+    }
+  }
 
   @inline
   def makeDubboRequest(requestId: Long,
@@ -36,10 +45,10 @@ object BenchmarkRequest {
 
     createDubboRequestHeader(header, requestId)
     header.writeInt(Begin.length + body.readableBytes() + End.length)
-    cb.addComponent(true,header)
-    cb.addComponent(true,Unpooled.wrappedBuffer(Begin))
-    cb.addComponent(true,body)
-    cb.addComponent(true,Unpooled.wrappedBuffer(End))
+    cb.addComponent(true, header)
+    cb.addComponent(true, Unpooled.wrappedBuffer(Begin))
+    cb.addComponent(true, body)
+    cb.addComponent(true, Unpooled.wrappedBuffer(End))
 
     cb
   }

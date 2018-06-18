@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
 import cn.goldlokedu.alicomp.documents._
-import io.netty.buffer.{ByteBuf, ByteBufUtil}
+import io.netty.buffer.{ByteBuf, ByteBufUtil, Unpooled}
 import io.netty.channel._
 import io.netty.util.ReferenceCountUtil
 
@@ -16,7 +16,7 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
       case req: BenchmarkRequest =>
         workingRequests(req.requestId) = req
         req.byteBuf.retain()
-        ctx.writeAndFlush(req.byteBuf, ctx.voidPromise())
+        BenchmarkRequest.writePrivateRequest(ctx,req)
       case any =>
         ReferenceCountUtil.release(any)
     }

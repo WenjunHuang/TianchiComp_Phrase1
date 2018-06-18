@@ -3,19 +3,22 @@ package cn.goldlokedu.alicomp.provider.netty
 import cn.goldlokedu.alicomp.util.{DirectClientHandler, RelayHandler}
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel._
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder
 import io.netty.util.concurrent.Future
 import org.slf4j.Logger
 
-class ProviderAgentHandler(dubboHost: String,
-                           dubboPort: Int)(implicit log: Logger) extends ChannelInboundHandlerAdapter {
+class ProviderAgentInitHandler(dubboHost: String,
+                               dubboPort: Int)(implicit log: Logger) extends ChannelInboundHandlerAdapter {
 
   override def channelActive(ctx: ChannelHandlerContext): Unit = {
     val promise = ctx.executor().newPromise[Channel]()
     promise.addListener { future: Future[Channel] =>
       val outboundChannel = future.getNow
       if (future.isSuccess) {
-        ctx.pipeline().remove(ProviderAgentHandler.this)
+        ctx.pipeline().remove(ProviderAgentInitHandler.this)
         outboundChannel.pipeline().addLast(new RelayHandler(ctx.channel()))
+        ctx.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, 8, 4))
+        ctx.pipeline().addLast(new ProtocalHandler)
         ctx.pipeline().addLast(new RelayHandler(outboundChannel))
       } else {
         ServerUtils.closeOnFlush(ctx.channel())

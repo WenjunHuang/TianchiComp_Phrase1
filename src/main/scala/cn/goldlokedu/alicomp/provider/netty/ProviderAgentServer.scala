@@ -25,7 +25,7 @@ class ProviderAgentServer(serverHost: String,
       .group(bossGroup, workerGroup)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(ch: SocketChannel): Unit = {
-          ch.pipeline().addLast(new ProviderAgentHandler(dubboHost, dubboPort))
+          ch.pipeline().addLast(new ProviderAgentInitHandler(dubboHost, dubboPort))
         }
       })
     ServerUtils.setServerChannelClass(b)
