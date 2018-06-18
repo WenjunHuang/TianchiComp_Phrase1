@@ -20,7 +20,7 @@ import scala.collection.convert.ImplicitConversions._
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
                                    consumerHttpPort: Int) {
-  val bossGroup = ServerUtils.newGroup(4)
+  val bossGroup = ServerUtils.newGroup(3)
   val workerGroup = bossGroup
   var serverChannel: Channel = _
 
