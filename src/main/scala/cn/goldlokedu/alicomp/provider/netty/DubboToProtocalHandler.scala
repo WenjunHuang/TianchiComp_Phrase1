@@ -37,7 +37,9 @@ class DubboToProtocalHandler extends SimpleChannelInboundHandler[ByteBuf] {
       } else
         0
 
-      val buf = ctx.alloc().buffer(14)
+      val buf = msg.retain()
+      buf.resetReaderIndex()
+      buf.resetWriterIndex()
       buf.writeLong(reqId)
       buf.writeShort(status.toInt)
       buf.writeInt(result)
