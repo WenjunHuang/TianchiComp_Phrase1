@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.documents
 
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator, PooledByteBufAllocator, Unpooled}
+import io.netty.buffer.{ByteBuf, ByteBufAllocator, PooledByteBufAllocator}
 import io.netty.channel.{Channel, ChannelHandlerContext}
 import io.netty.util.CharsetUtil
 
@@ -21,10 +21,14 @@ object BenchmarkRequest {
 
   def writePrivateRequest(ctx: ChannelHandlerContext, req: BenchmarkRequest) = {
     ctx.channel().eventLoop().execute { () =>
-      ctx.write(Unpooled.copyLong(req.requestId), ctx.voidPromise())
-      ctx.write(Unpooled.copyInt(req.byteBuf.readableBytes()), ctx.voidPromise())
-      ctx.write(req.byteBuf, ctx.voidPromise())
-      ctx.flush()
+      val b = ctx.alloc().buffer(12)
+      b.writeLong(req.requestId)
+      b.writeInt(req.byteBuf.readableBytes())
+
+      val cb = ctx.alloc().compositeBuffer(2)
+      cb.addComponent(true, b)
+      cb.addComponent(true, req.byteBuf)
+      ctx.writeAndFlush(cb, ctx.voidPromise())
     }
   }
 
