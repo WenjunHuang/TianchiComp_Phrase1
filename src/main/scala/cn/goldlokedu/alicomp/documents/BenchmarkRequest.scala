@@ -1,7 +1,7 @@
 package cn.goldlokedu.alicomp.documents
 
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator, Unpooled}
+import io.netty.buffer.{ByteBuf, ByteBufAllocator, PooledByteBufAllocator, Unpooled}
 import io.netty.channel.{Channel, ChannelHandlerContext}
 import io.netty.util.CharsetUtil
 
@@ -40,15 +40,15 @@ object BenchmarkRequest {
   }
 
   def makeDubboRequest(requestId: Long, body: ByteBuf, alloc: ByteBufAllocator) = {
-    val cb = alloc.compositeBuffer(3)
+    val cb = alloc.compositeDirectBuffer(4)
     val header = alloc.buffer(DubboMessage.HeaderWithLength)
 
     createDubboRequestHeader(header, requestId)
-    header.writeInt(Begin.length + body.readableBytes() + End.length)
+    header.writeInt(Begin.readableBytes() + body.readableBytes() + End.readableBytes())
     cb.addComponent(true, header)
-    cb.addComponent(true, Unpooled.wrappedBuffer(Begin))
+    cb.addComponent(true, Begin.retainedSlice())
     cb.addComponent(true, body)
-    cb.addComponent(true, Unpooled.wrappedBuffer(End))
+    cb.addComponent(true, End.retainedSlice())
 
     cb
   }
@@ -110,14 +110,19 @@ object BenchmarkRequest {
     bodyBuilder.append('\n')
     bodyBuilder.append('"')
 
-    bodyBuilder.result().getBytes(CharsetUtil.UTF_8)
+    val bytes = bodyBuilder.result().getBytes(CharsetUtil.UTF_8)
+
+    val buffer = PooledByteBufAllocator.DEFAULT.buffer(bytes.size)
+    buffer.writeBytes(bytes)
   }
   val End = {
     val bodyBuilder = new StringBuilder
     bodyBuilder.append('"')
     bodyBuilder.append('\n')
     bodyBuilder.append(Trail)
-    bodyBuilder.result().getBytes(CharsetUtil.UTF_8)
+    val bytes = bodyBuilder.result().getBytes(CharsetUtil.UTF_8)
+    val buffer = PooledByteBufAllocator.DEFAULT.buffer(bytes.size)
+    buffer.writeBytes(bytes)
   }
 }
 
