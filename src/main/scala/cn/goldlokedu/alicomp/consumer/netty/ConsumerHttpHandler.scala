@@ -3,16 +3,15 @@ package cn.goldlokedu.alicomp.consumer.netty
 import java.util.UUID
 
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest
-import io.netty.buffer.{ByteBuf, CompositeByteBuf}
+import io.netty.buffer.ByteBuf
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostStandardRequestDecoder}
-import io.netty.util.{ByteProcessor, CharsetUtil, ReferenceCountUtil}
+import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory
+import io.netty.util.ReferenceCountUtil
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
 
-class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec: ExecutionContext) extends ChannelInboundHandlerAdapter {
+class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends ChannelInboundHandlerAdapter {
   val contents: mutable.Buffer[HttpContent] = mutable.Buffer()
   var size = 0
 

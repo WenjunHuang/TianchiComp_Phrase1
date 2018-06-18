@@ -2,10 +2,10 @@ package cn.goldlokedu.alicomp.provider.netty
 
 import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.{PooledByteBufAllocator, Unpooled}
+import io.netty.channel._
 import io.netty.channel.epoll._
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
-import io.netty.channel._
 
 object ServerUtils {
   def closeOnFlush(ch: Channel) = {

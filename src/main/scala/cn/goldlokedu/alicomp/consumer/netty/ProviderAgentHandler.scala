@@ -1,14 +1,13 @@
 package cn.goldlokedu.alicomp.consumer.netty
 
 import cn.goldlokedu.alicomp.documents._
-import io.netty.buffer.{ByteBuf, ByteBufUtil, Unpooled}
+import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.util.ReferenceCountUtil
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
 
-class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit)(implicit ec: ExecutionContext) extends ChannelDuplexHandler {
+class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Value, BenchmarkRequest) => Unit) extends ChannelDuplexHandler {
   val workingRequests: mutable.LongMap[BenchmarkRequest] = mutable.LongMap()
 
   override def write(ctx: ChannelHandlerContext, msg: scala.Any, promise: ChannelPromise): Unit = {
@@ -16,7 +15,7 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
       case req: BenchmarkRequest =>
         workingRequests(req.requestId) = req
         req.byteBuf.retain()
-        BenchmarkRequest.writePrivateRequest(ctx,req)
+        BenchmarkRequest.writePrivateRequest(ctx, req)
       case any =>
         ReferenceCountUtil.release(any)
     }
@@ -36,9 +35,7 @@ class ProviderAgentHandler(cap: CapacityType.Value, failRetry: (CapacityType.Val
                 if (status == 20) {
                   ReferenceCountUtil.release(req.byteBuf)
                   val channel = req.replyTo
-                  Future {
-                    channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
-                  }
+                  channel.writeAndFlush(BenchmarkResponse.toHttpResponse(buf), channel.voidPromise())
                 } else {
                   ReferenceCountUtil.release(buf)
 

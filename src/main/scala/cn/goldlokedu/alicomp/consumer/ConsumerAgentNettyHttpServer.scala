@@ -1,7 +1,6 @@
 package cn.goldlokedu.alicomp.consumer
 
 import java.net.InetSocketAddress
-import java.util.concurrent.Executors
 
 import cn.goldlokedu.alicomp.consumer.netty.{ConsumerHttpHandler, ProviderAgentHandler, ProviderAgentUtils}
 import cn.goldlokedu.alicomp.documents.{CapacityType, _}
@@ -12,12 +11,11 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
-import io.netty.handler.codec.http.{HttpObjectAggregator, HttpServerCodec}
+import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
 
 import scala.collection.convert.ImplicitConversions._
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
                                    consumerHttpHost: String,
@@ -44,7 +42,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     }
   }
 
-  private def connectProviderAgents()(implicit ec: ExecutionContext) = {
+  private def connectProviderAgents() = {
+    import scala.concurrent.ExecutionContext.Implicits._
     etcdClient.providers()
       .map { ras =>
         ras.foreach { agent =>
@@ -73,7 +72,7 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
   private def createProviderAgentBootstrap(cap: CapacityType.Value,
                                            failRetry: (CapacityType.Value, BenchmarkRequest) => Unit,
-                                           group: EventLoopGroup)(implicit ec: ExecutionContext) = {
+                                           group: EventLoopGroup) = {
     val b = new Bootstrap
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
@@ -88,7 +87,6 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
 
 
   def run() = {
-    implicit val ec: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
     val bootstrap = new ServerBootstrap()
     bootstrap.group(bossGroup, workerGroup)
       .handler(new LoggingHandler(LogLevel.INFO))

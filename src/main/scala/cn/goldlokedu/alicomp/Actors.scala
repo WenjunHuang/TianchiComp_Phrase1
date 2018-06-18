@@ -3,6 +3,7 @@ package cn.goldlokedu.alicomp
 
 import cn.goldlokedu.alicomp.etcd.EtcdClient
 import org.slf4j._
+
 import scala.concurrent.ExecutionContext.Implicits._
 
 trait Infrastructure {
