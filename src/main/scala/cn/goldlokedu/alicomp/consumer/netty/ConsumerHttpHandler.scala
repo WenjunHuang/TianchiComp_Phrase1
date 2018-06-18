@@ -3,16 +3,18 @@ package cn.goldlokedu.alicomp.consumer.netty
 import java.util.UUID
 
 import cn.goldlokedu.alicomp.documents.BenchmarkRequest
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBuf, CompositeByteBuf}
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.multipart.{DefaultHttpDataFactory, HttpData, HttpPostStandardRequestDecoder}
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec: ExecutionContext) extends ChannelInboundHandlerAdapter {
   var decoder: HttpPostStandardRequestDecoder = _
+  val contents: mutable.Buffer[HttpContent] = mutable.Buffer()
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
 
@@ -20,8 +22,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:
       case req: HttpRequest =>
         decoder = new HttpPostStandardRequestDecoder(new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE), req, CharsetUtil.UTF_8)
       case last: LastHttpContent =>
-        decoder.offer(last)
-        ReferenceCountUtil.release(last)
+        contents += last
         val d = decoder
         decoder = null
         val agentChannel = ProviderAgentUtils.chooseProviderAgent()
@@ -48,8 +49,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit)(implicit ec:
           agentChannel.writeAndFlush(BenchmarkRequest(builder, requestId, ctx.channel()), agentChannel.voidPromise())
         }
       case body: HttpContent =>
-        decoder.offer(body)
-        ReferenceCountUtil.release(body)
+        contents += body
       case req: FullHttpRequest if req.method() == HttpMethod.POST =>
         val agentChannel = ProviderAgentUtils.chooseProviderAgent()
         Future {
