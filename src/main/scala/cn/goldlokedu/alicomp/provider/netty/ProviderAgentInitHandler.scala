@@ -1,5 +1,6 @@
 package cn.goldlokedu.alicomp.provider.netty
 
+import cn.goldlokedu.alicomp.documents.DubboMessage
 import cn.goldlokedu.alicomp.util.{DirectClientHandler, RelayHandler}
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel._
@@ -16,6 +17,7 @@ class ProviderAgentInitHandler(dubboHost: String,
       val outboundChannel = future.getNow
       if (future.isSuccess) {
         ctx.pipeline().remove(ProviderAgentInitHandler.this)
+        outboundChannel.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
         outboundChannel.pipeline().addLast(new RelayHandler(ctx.channel()))
         ctx.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, 8, 4))
         ctx.pipeline().addLast(new ProtocalHandler)

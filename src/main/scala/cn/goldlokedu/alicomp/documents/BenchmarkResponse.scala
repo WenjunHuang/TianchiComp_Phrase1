@@ -1,10 +1,8 @@
 package cn.goldlokedu.alicomp.documents
 
-import java.nio.charset.StandardCharsets
-
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.handler.codec.http.{DefaultFullHttpResponse, FullHttpResponse, HttpResponseStatus, HttpVersion}
-import io.netty.util.{AsciiString, ReferenceCountUtil}
+import io.netty.util.{AsciiString, CharsetUtil, ReferenceCountUtil}
 
 case class BenchmarkResponse(requestId: Long,
                              status: Int,
@@ -25,6 +23,16 @@ object BenchmarkResponse {
     response
   }
 
+
+  def toHttpResponse(value:Int):FullHttpResponse = {
+    val buf = Unpooled.copiedBuffer(String.valueOf(value),CharsetUtil.UTF_8)
+    val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+      HttpResponseStatus.OK, buf)
+    response.headers().set(CONTENT_TYPE, TEXT_PLAIN)
+    response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes())
+    response.headers().set(CONNECTION, KEEP_ALIVE)
+    response
+  }
 
   def toHttpResponse(dubboMessage: ByteBuf): FullHttpResponse = {
     // 测试的结果是个32位整数值，但是dubbo用fastjson编码后得出的是一个字符串，例如 9900，结果是"1\n9900\n"字符串

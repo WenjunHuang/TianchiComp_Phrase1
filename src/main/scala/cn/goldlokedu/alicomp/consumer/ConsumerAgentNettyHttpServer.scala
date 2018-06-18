@@ -10,7 +10,7 @@ import io.netty.bootstrap.{Bootstrap, ServerBootstrap}
 import io.netty.buffer.ByteBuf
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder
+import io.netty.handler.codec.{FixedLengthFrameDecoder, LengthFieldBasedFrameDecoder}
 import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.logging.{LogLevel, LoggingHandler}
 import io.netty.util.ReferenceCountUtil
@@ -77,7 +77,8 @@ class ConsumerAgentNettyHttpServer(etcdClient: EtcdClient,
     b.group(group)
       .handler(new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
-          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
+//          ch.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
+          ch.pipeline().addFirst(new FixedLengthFrameDecoder(14))
           ch.pipeline().addLast(new ProviderAgentHandler(cap, failRetry))
         }
       })
