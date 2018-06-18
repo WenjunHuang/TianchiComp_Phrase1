@@ -32,6 +32,7 @@ class ConsumerHttpHandler(sender: (ByteBuf, Long, Channel) => Unit) extends Chan
 
 
         val requestId = UUID.randomUUID().getLeastSignificantBits
+        println(requestId)
         val agentChannel = ProviderAgentUtils.chooseProviderAgent()
         agentChannel.writeAndFlush(BenchmarkRequest(cb, requestId, ctx.channel()), agentChannel.voidPromise())
       case body: HttpContent =>

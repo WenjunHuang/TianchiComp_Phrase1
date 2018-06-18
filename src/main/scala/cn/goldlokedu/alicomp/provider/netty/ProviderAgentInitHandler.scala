@@ -18,6 +18,7 @@ class ProviderAgentInitHandler(dubboHost: String,
       if (future.isSuccess) {
         ctx.pipeline().remove(ProviderAgentInitHandler.this)
         outboundChannel.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, DubboMessage.HeaderSize, 4))
+        outboundChannel.pipeline().addLast(new DubboToProtocalHandler)
         outboundChannel.pipeline().addLast(new RelayHandler(ctx.channel()))
         ctx.pipeline().addFirst(new LengthFieldBasedFrameDecoder(2 * 1024, 8, 4))
         ctx.pipeline().addLast(new ProtocalHandler)
